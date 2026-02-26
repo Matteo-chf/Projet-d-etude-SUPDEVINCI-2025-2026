@@ -1,0 +1,65 @@
+version: "3.8"
+
+services:
+  mongo:
+    image: mongo:6.0
+    container_name: mongo
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+    volumes:
+      - mongo-data:/data/db
+
+  postgres:
+    image: postgres:13
+    container_name: postgres
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  airflow-webserver:
+    image: apache/airflow:2.7.1
+    container_name: airflow-webserver
+    depends_on:
+      - postgres
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+      BLUESKY_API_IDENTIFIER: ${BLUESKY_API_IDENTIFIER}
+      BLUESKY_LOGIN: ${BLUESKY_LOGIN}
+      MONGO_URI: mongodb://root:example@mongo:27017/
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./services:/opt/airflow/services
+      - ./logs:/opt/airflow/logs
+    ports:
+      - "8080:8080"
+    command: webserver
+
+  airflow-scheduler:
+    image: apache/airflow:2.7.1
+    container_name: airflow-scheduler
+    depends_on:
+      - airflow-webserver
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+      BLUESKY_API_IDENTIFIER: ${BLUESKY_API_IDENTIFIER}
+      BLUESKY_LOGIN: ${BLUESKY_LOGIN}
+      MONGO_URI: mongodb://root:example@mongo:27017/
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./services:/opt/airflow/services
+      - ./logs:/opt/airflow/logs
+    command: scheduler
+
+volumes:
+  mongo-data:
+  postgres-data:
