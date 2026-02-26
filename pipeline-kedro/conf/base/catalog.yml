@@ -94,3 +94,18 @@ dummy_confusion_matrix:
   type: matplotlib.MatplotlibWriter
   filepath: data/08_reporting/dummy_confusion_matrix.png
   versioned: true
+# Source brute depuis MongoDB
+bluesky_posts_raw:
+  type: mongodb.MongoDataset
+  connection_args:
+    host: "localhost"
+    port: 27017
+  database: "Bluesky"
+  collection: "timeline"
+
+# Destination uniformisée pour le ML
+# Format: Parquet (optimal pour les performances)
+# Emplacement: data/02_intermediate/
+bluesky_posts_uniformized:
+  type: pandas.ParquetDataset
+  filepath: data/02_intermediate/bluesky_posts_uniformized.parquet
