@@ -1,0 +1,15 @@
+# Paramètres de vectorisation TF-IDF
+# Utilisés par le pipeline 'vectorization'
+
+vectorization:
+  # Nombre maximum de features (mots/n-grams) à conserver
+  max_features: 5000
+
+  # Fréquence maximale : exclut les termes apparaissant dans plus de 95% des docs
+  max_df: 0.95
+
+  # Fréquence minimale : exclut les termes apparaissant dans moins de 2 docs
+  min_df: 2
+
+  # Plage de n-grams : [1, 2] = unigrammes + bigrammes
+  ngram_range: [1, 2]

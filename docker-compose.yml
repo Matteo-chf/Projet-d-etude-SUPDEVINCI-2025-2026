@@ -32,9 +32,9 @@ services:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
     volumes:
-     volumes:
       - ./airflow/dags:/opt/airflow/dags
       - ./src:/opt/airflow/src
+      - ./pipeline-kedro:/opt/airflow/pipeline-kedro
     command: >
       bash -c "airflow db init &&
       airflow users create
@@ -57,9 +57,9 @@ services:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
     volumes:
-     volumes:
       - ./airflow/dags:/opt/airflow/dags
       - ./src:/opt/airflow/src
+      - ./pipeline-kedro:/opt/airflow/pipeline-kedro
       - ./logs:/opt/airflow/logs  # Docker utilisera ton dossier logs à la racine
     ports:
       - "8080:8080"
@@ -77,9 +77,9 @@ services:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
     volumes:
-     volumes:
       - ./airflow/dags:/opt/airflow/dags
       - ./scripts:/opt/airflow/scripts # Docker utilisera ton dossier scripts à la racine
+      - ./pipeline-kedro:/opt/airflow/pipeline-kedro
       - ./logs:/opt/airflow/logs
     command: scheduler
  

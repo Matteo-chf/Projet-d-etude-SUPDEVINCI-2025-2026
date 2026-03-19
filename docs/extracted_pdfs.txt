@@ -1,0 +1,223 @@
+=== PROJET.PDF ===
+Cahier des Charges – Mastère 1 Data &
+IA
+Projet Thumalien – Détection de Fake News sur Bluesky
+I. CONTEXTE ET PROBLÉMATIQUE
+Les réseaux sociaux jouent un rôle central dans la diffusion de l’information, mais sont
+également un terrain fertile pour les fake news.
+Le client fictif, Thumalien, souhaite développer une solution d’analyse automatisée des
+messages publiés sur Bluesky afin de :
+- Identifier rapidement les contenus douteux ou trompeurs.
+- Évaluer leur impact émotionnel (colère, peur, humour, etc.).
+- Fournir un outil d’aide à la vérification et au fact-checking.
+Problèmes identifiés :
+- Le volume d’information est trop élevé pour une modération humaine.
+- Les fake news se propagent plus vite que les démentis.
+- Les outils de fact-checking automatisés existants sont souvent limités à l’anglais et peu adaptés
+aux nouveaux réseaux.
+- Peu d’outils prennent en compte l’impact émotionnel et l’aspect énergétique.
+Enjeux métier et sociétal :
+- Aider les journalistes, associations et citoyens à détecter plus rapidement la désinformation.
+- Évaluer la crédibilité d’un contenu avec des scores de fiabilité.
+- Contribuer à un usage plus responsable de l’IA et du Big Data grâce à un suivi énergétique.
+II. OBJECTIFS DU PROJET
+ Développer une pipeline d’analyse NLP pour détecter les fake news sur Bluesky.
+ Générer des indicateurs clairs : score de crédibilité, tonalité émotionnelle.
+ Mettre en avant la transparence: rapport expliquant pourquoi un contenu est jugé
+douteux.
+ Suivre la consommation énergétique du projet (green IT).
+III. ORGANISATION ET BESOINS PAR PÔLE
+ Utilisateurs : Interface simple, score de crédibilité, alertes fake news.
+ Fact-checkers : Détails sur la classification, justification du score.
+ Technique : Pipeline fiable, scalable, monitoring énergétique.
+ Direction (client) : Démontrer une valeur sociétale et un MVP concret.
+IV. FONCTIONNALITÉS ATTENDUES
+1. Collecte des données (API Bluesky, extraction FR/EN, stockage brut).
+2. 2. Prétraitement NLP (nettoyage, tokenisation, embeddings).
+3. Détection de fake news (classification, score de crédibilité).
+4. Analyse émotionnelle (détection de tonalités, visualisation).
+5. Dashboard utilisateur (vue simple + graphiques).
+6. Suivi énergétique (monitoring CPU/GPU, rapport).
+V. SOLUTION TECHNIQUE CONSEILLÉE
+ Collecte : API Bluesky, Python (requests).
+ Prétraitement : NLTK, spaCy, Transformers.
+ Classification : BERT/RoBERTa, scikit-learn baseline.
+ Émotion : EmotionBERT, VADER baseline.
+ Stockage : PostgreSQL, MongoDB.
+ Visualisation : Streamlit ou Dash.
+ Monitoring énergétique : CodeCarbon, MLCO2.
+ Infrastructure : Docker, Cloud étudiant.
+VI. INNOVATIONS ATTENDUES
+ Explicabilité IA (poids des mots).
+ Analyse émotionnelle enrichissant le fact-checking.
+ Dashboard pédagogique clair.
+ Monitoring énergétique inédit.
+ Scalabilité (Spark/Kafka futur).
+VII. RÉPARTITION DES RÔLES ENTRE ÉTUDIANTS
+Exemple de répartition
+ Étudiant 1 – Data Engineer : API, stockage, ETL.
+ Étudiant 2 – Data Scientist : NLP, classification.
+ Étudiant 3 – Analyste IA : émotions, explicabilité, dashboard.
+ Étudiant 4 – Green IT : suivi énergétique, rapport qualité code.
+VIII. LIVRABLES ATTENDUS
+ MVP fonctionnel : pipeline complet.
+ Documentation technique.
+ Guide utilisateur.
+ Vidéo de démonstration.
+IX. AIDE COMPLÉMENTAIRE ET BONNES PRATIQUES
+Ressources externes : GitHub Student Pack, API Bluesky, datasets open source.
+Bonnes pratiques : versionner le code, documenter pipeline, tests unitaires, suivi énergétique.
+KPIs : F1-score, taux FP/FN, temps moyen d’analyse, économie énergétique.
+=== SUITE.PDF ===
+Projet d'études M1DATA
+26 Février 2026
+MASTÈRE BIG DATA & IA
+FORMATEUR : DIALLO ALIMOU 
+SUP DE VINCI
+NLP sur Bluesky avec Kedro
+Pipeline complet :
+Posts Bluesky
+Nettoyage NLP
+Vectorisation
+Modèle ML / IA
+C’est quoi la vectorisation
+La vectorisation consiste à transformer du texte (mots, phrases, documents) en
+vecteurs numériques.
+Ces vecteurs sont des représentations mathématiques que les algorithmes peuvent
+analyser.
+ Exemple concret (mairie)
+Un citoyen écrit :
+"Problème avec l’éclairage public dans ma rue" [0.12, 0.98, 0.03, 0.44, ...]
+Grâce à ça, le système peut :
+Trier automatiquement les messages
+Classer en catégories :
+État civil
+Infrastructure
+Services publics
+L’amélioration par la pondération TF-IDF
+Pour pallier l’un des défauts du modèle BoW – le fait que des mots très fréquents
+mais peu informatifs (comme « le », « de », « un ») dominent le vecteur –, la méthode
+TF-IDF (Term Frequency-Inverse Document Frequency) a été développée. Elle affine
+la représentation en pondérant l’importance de chaque mot.
+❓  Problème
+Tous les mots n’ont pas la même importance :
+Mots comme :
+"le", "de", "et", "est", "un"
+ apparaissent partout →  peu informatifs
+Mots comme :
+"covid", "élection", "incendie", "grève"
+ rares mais très importants
+L’avènement des « Word Embeddings » (Word2Vec, GloVe)
+Les « word embeddings » (plongements de mots) sont la première génération de
+modèles neuronaux dédiés à la vectorisation des données. Des algorithmes comme
+Word2Vec et GloVe ont révolutionné le Traitement Automatique du Langage (NLP).
+Contrairement aux vecteurs creux et de très grande dimension de BoW/TF-IDF, les
+word embeddings sont des vecteurs denses, de plus petite dimension (typiquemen
+entre 50 et 300).
+Avec Word2Vec
+ vecteur("roi") - vecteur("homme") + vecteur("femme") ≈ vecteur("reine")
+Les représentations contextuelles (BERT & Transformers)
+Malgré leur puissance, les word embeddings classiques comme Word2Vec ont une
+limite majeure : ils assignent un seul et unique vecteur à chaque mot, quel que soit
+son contexte. Or, de nombreux mots sont polysémiques. Le mot « avocat » n’a pas
+le même sens dans « l’avocat défend son client » et « j’aime la salade d’avocat ».
+La révolution suivante est venue avec les modèles de langage basés sur l’architecture
+Transformer, dont BERT (Bidirectional Encoder Representations from Transformers)
+est l’un des pionniers. L’innovation fondamentale de ces modèles est de générer des
+représentations contextuelles. Le vecteur d’un mot est calculé dynamiquement en
+fonction de la phrase entière dans laquelle il se trouve, grâce à un mécanisme
+d’attention qui pondère l’influence des autres mots.
+Ainsi, le mot « avocat » aura deux vecteurs très différents dans les exemples
+précédents, résolvant ainsi le problème de la polysémie.
+Comprendre la vectorisation avec des exemples
+simples
+Exemple 1 — Phrases simples (Bag of Words)
+1. "J'aime le football"
+2. "J'aime le tennis"
+3. "Le football est populaire"
+Vocabulaire global["j'aime", "le", "football", "tennis", "est", "populaire"]
+Représentation vectorielle
+Exemple 1 — Phrases simples (Bag of Words)
+Ligne 1 : "j aime le football" [0.6198, 0, 0.6198, 0.4813, 0, 0]
+Un autre exemple avec les données Bluesky
+docs = [
+    "breaking news election",
+    "football match tonight",
+    "election results today",
+]
+TF-IDF transforme chaque post en vecteur numérique.
+ Les mots rares mais informatifs ont un poids fort, les mots communs ont
+un poids faible.
+Lien direct avec mon pipeline Kedro
+Dans ton pipeline :
+Input : cleaned_posts.pkl
+docs = [p["clean_text"] for p in cleaned_posts]
+vectorizer.fit_transform(docs)
+Modèle ML / IA
+On a transformé du texte en vecteurs numériques (TF-IDF).
+ Maintenant, on va utiliser des algorithmes de Machine Learning pour :
+Regrouper les posts par thème (clustering)
+Classifier les posts (classification supervisée)
+Détecter des tendances
+Plus tard : fake news, sujets sensibles, etc.
+Un modèle de Machine Learning ne comprend PAS le texte Il ne comprend que des
+nombres (vecteurs)
+Clustering — Regrouper automatiquement les posts
+Le clustering est une technique de Machine Learning qui consiste à regrouper
+automatiquement des données similaires entre elles, sans connaître les
+catégories à l’avance.
+  C’est de l’apprentissage non supervisé :
+On ne donne pas de labels
+Le modèle découvre tout seul les groupes (clusters)
+Le clustering, c’est comme trier des objets sans savoir à l’avance leurs catégories,
+uniquement en regardant leurs ressemblances.
+Clustering — Regrouper automatiquement les posts
+Exemple très concret (vie réelle)
+Trier des chaussettes
+Tu as un tas de chaussettes mélangées :
+Le clustering va faire des piles :
+Couleurs similaires
+Tailles similaires
+Types similaires
+Tu n’as pas dit au modèle :
+"Ceci est une chaussette rouge"
+Il a juste regroupé ce qui se ressemble
+Classification — Trier les posts par catégorie
+Cette fois, on donne des exemples déjà classés au modèle.
+Exemples d’apprentissage :
+Algorithme classique K-Means
+L’algorithme de clustering le plus simple et le plus utilisé.
+Il :
+Choisit K groupes
+Place des centres
+Regroupe les points les plus proches
+Après la création du modèle : et maintenant ?
+Nous avons :
+Collecté les données
+Nettoyé les posts
+Vectorisé (TF-IDF)
+Entraîné un modèle (KMeans / Classifier)
+Question :
+Comment rendre ce modèle utilisable dans la vraie vie ?
+Sauvegarde du modèle (joblib)
+import joblib
+joblib.dump(model, "data/06_models/model.joblib")
+joblib.dump(vectorizer, "data/06_models/vectorizer.joblib")
+Ce qu’il faut TOUJOURS sauvegarder
+créer une API
+Parce que le modèle doit être accessible :
+Par un site web
+Par un dashboard
+Par un autre système
+En temps réel
+API avec FastAPI
+Fonctionnement de l’API
+L’utilisateur envoie un texte
+L’API :
+transforme en vecteur
+applique le modèle
+L’API retourne :
+cluster
+catégorie
+score
+Exemple Streamlit
