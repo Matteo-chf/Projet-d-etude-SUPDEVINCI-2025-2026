@@ -1,24 +1,18 @@
-"""
-This is a boilerplate pipeline 'nlp_cleaning'
-generated using Kedro 1.0.0
-#pour clean les données textuelles
-"""
 import pandas as pd
 import re
 
 def uniformize_posts(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Uniformise les colonnes et le texte pour le modèle ML.
+    Uniformise le texte et les dates des posts pour préparer le ML.
     """
-    # 1. Nettoyage basique du texte
+    # 1. Nettoyage basique du texte (minuscules, suppression liens HTTP)
     if "text" in df.columns:
         df["text_cleaned"] = df["text"].astype(str).str.lower()
-        # Suppression des URLs
         df["text_cleaned"] = df["text_cleaned"].apply(lambda x: re.sub(r'http\S+', '', x))
     
-    # 2. Gestion du format de date
+    # 2. Conversion de la date en format standard datetime
     if "createdAt" in df.columns:
         df["createdAt"] = pd.to_datetime(df["createdAt"])
 
-    # 3. Sélection des colonnes finales pour le catalogue
+    # 3. Retourne uniquement les colonnes utiles pour la suite du pipeline
     return df[["text_cleaned", "createdAt"]]

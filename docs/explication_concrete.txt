@@ -1,0 +1,14 @@
+=== DÉMONSTRATION CONCRÈTE : QU'EST-CE QUE ÇA FAIT ? ===
+
+L'IA ne sait pas lire le texte comme nous. Elle ne comprend que les nombres.
+
+1. **Le problème** : Votre post est "news sur les élections".
+2. **La solution (TF-IDF)** : On transforme "news" et "élections" en chiffres.
+3. **Le résultat** : 
+   - Post 0 : [news=1.0, élections=1.0, sport=0.0]
+   - Post 1 : [news=0.0, élections=0.0, sport=1.0]
+
+Grâce à ces colonnes de chiffres, l'IA peut maintenant dire :
+"Le Post 0 ressemble au Post 4 car ils ont tous les deux une valeur élevée en 'élections'. C'est peut-être une catégorie Géo-Politique."
+
+C'est cette étape de "traduction" en nombres que nous venons de réussir dans Kedro !
