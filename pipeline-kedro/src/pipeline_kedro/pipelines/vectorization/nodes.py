@@ -23,19 +23,20 @@ def vectorize_posts(cleaned_posts: pd.DataFrame, parameters: dict) -> tuple[pd.D
         Tuple (DataFrame avec vecteurs TF-IDF, vectorizer entraîné).
     """
     max_features = parameters.get("max_features", 5000)
-    ngram_min = parameters.get("ngram_min", 1)
-    ngram_max = parameters.get("ngram_max", 2)
+    max_df = parameters.get("max_df", 0.95)
     min_df = parameters.get("min_df", 2)
+    ngram_range = tuple(parameters.get("ngram_range", [1, 2]))
 
     logger.info(
-        "Vectorisation TF-IDF : max_features=%d, ngram=(%d,%d), min_df=%d",
-        max_features, ngram_min, ngram_max, min_df,
+        "Vectorisation TF-IDF : max_features=%d, ngram=%s, min_df=%s, max_df=%s",
+        max_features, ngram_range, min_df, max_df,
     )
 
     vectorizer = TfidfVectorizer(
         max_features=max_features,
-        ngram_range=(ngram_min, ngram_max),
+        ngram_range=ngram_range,
         min_df=min_df,
+        max_df=max_df,
         sublinear_tf=True,
     )
 

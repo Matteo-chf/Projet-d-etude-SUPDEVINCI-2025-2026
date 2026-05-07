@@ -1,0 +1,17 @@
+=== DÉMONSTRATION CONCRÈTE : QU'EST-CE QUE ÇA FAIT ? ===
+Imaginez que chaque post est une ligne. L'IA ne sait pas lire le texte.
+On transforme donc les mots en colonnes numériques (TF-IDF).
+Plus le chiffre est proche de 1, plus le mot est important pour ce post.
+
+Aperçu de la matrice (Post vs Mots-clés) :
+   news  santé
+0   1.0    0.0
+1   0.0    0.0
+2   0.0    1.0
+3   0.0    0.0
+4   0.0    0.0
+
+En résumé :
+- L'IA voit maintenant que le Post 0 parle de "news" (valeur 1.0).
+- Elle voit que le Post 2 parle de "santé" (valeur 1.0).
+- C'est à partir de ces chiffres qu'on peut ensuite grouper les fake news ensemble.
