@@ -1,0 +1,5 @@
+vectorization:
+  max_features: 5000
+  ngram_min: 1
+  ngram_max: 2
+  min_df: 2
