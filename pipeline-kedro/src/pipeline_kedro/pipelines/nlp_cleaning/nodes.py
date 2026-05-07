@@ -15,17 +15,28 @@ def fetch_from_mongo() -> pd.DataFrame:
 
     records = []
     for doc in docs:
-        post = doc.get("post", {})
-        record = post.get("record", {})
-        author = post.get("author", {})
-        text = record.get("text", "")
-        if text:
-            records.append({
-                "uri": post.get("uri", ""),
-                "author_handle": author.get("handle", ""),
-                "created_at": record.get("createdAt", ""),
-                "raw_text": text,
-            })
+        # Nouveau format : un document = un tweet (insert_many)
+        if "post" in doc:
+            posts = [doc]
+        # Ancien format : un document = plusieurs tweets dans data.feed
+        elif "data" in doc:
+            feed = doc["data"].get("feed", [])
+            posts = [{"post": item.get("post", {})} for item in feed]
+        else:
+            continue
+
+        for item in posts:
+            post = item.get("post", {})
+            record = post.get("record", {})
+            author = post.get("author", {})
+            text = record.get("text", "")
+            if text:
+                records.append({
+                    "uri": post.get("uri", ""),
+                    "author_handle": author.get("handle", ""),
+                    "created_at": record.get("createdAt", ""),
+                    "raw_text": text,
+                })
 
     return pd.DataFrame(records)
 
