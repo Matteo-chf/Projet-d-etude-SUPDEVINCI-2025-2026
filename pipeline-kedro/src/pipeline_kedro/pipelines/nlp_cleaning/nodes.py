@@ -15,18 +15,9 @@ def fetch_from_mongo() -> pd.DataFrame:
 
     records = []
     for doc in docs:
-        # Nouveau format : un document = un tweet (insert_many)
+        # Format timeline (insert_many) : post niché sous "post"
         if "post" in doc:
-            posts = [doc]
-        # Ancien format : un document = plusieurs tweets dans data.feed
-        elif "data" in doc:
-            feed = doc["data"].get("feed", [])
-            posts = [{"post": item.get("post", {})} for item in feed]
-        else:
-            continue
-
-        for item in posts:
-            post = item.get("post", {})
+            post = doc["post"]
             record = post.get("record", {})
             author = post.get("author", {})
             text = record.get("text", "")
@@ -37,6 +28,32 @@ def fetch_from_mongo() -> pd.DataFrame:
                     "created_at": record.get("createdAt", ""),
                     "raw_text": text,
                 })
+        # Format searchPosts (insert_many) : post plat à la racine
+        elif "record" in doc and "author" in doc:
+            record = doc.get("record", {})
+            author = doc.get("author", {})
+            text = record.get("text", "")
+            if text:
+                records.append({
+                    "uri": doc.get("uri", ""),
+                    "author_handle": author.get("handle", ""),
+                    "created_at": record.get("createdAt", ""),
+                    "raw_text": text,
+                })
+        # Ancien format (insert_one) : plusieurs tweets dans data.feed
+        elif "data" in doc:
+            for item in doc["data"].get("feed", []):
+                post = item.get("post", {})
+                record = post.get("record", {})
+                author = post.get("author", {})
+                text = record.get("text", "")
+                if text:
+                    records.append({
+                        "uri": post.get("uri", ""),
+                        "author_handle": author.get("handle", ""),
+                        "created_at": record.get("createdAt", ""),
+                        "raw_text": text,
+                    })
 
     return pd.DataFrame(records)
 

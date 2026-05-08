@@ -1,2 +1,8 @@
 scripts/token.json
 logs/
+.env
+venv/
+__pycache__/
+*.pyc
+*.pyo
+pipeline-kedro/data/

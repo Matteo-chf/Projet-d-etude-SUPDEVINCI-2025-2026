@@ -15,12 +15,13 @@ def print_report(raw_posts: pd.DataFrame) -> None:
     nb_imports = collection.count_documents({})
 
     total_tweets = 0
-    for doc in collection.find({}, {"_id": 0, "post": 1, "data": 1}):
+    for doc in collection.find({}, {"_id": 0, "post": 1, "data": 1, "record": 1, "author": 1}):
         if "post" in doc:
             total_tweets += 1
+        elif "record" in doc and "author" in doc:
+            total_tweets += 1
         elif "data" in doc:
-            feed = doc["data"].get("feed", [])
-            total_tweets += len(feed)
+            total_tweets += len(doc["data"].get("feed", []))
 
     print("=== Rapport Bluesky ===")
     print(f"Imports MongoDB  : {nb_imports}")
