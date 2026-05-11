@@ -46,7 +46,7 @@ if __name__ == "__main__":
                 print("JSON complet:", data)
             break
             
-        inserted_id = mongo.insert_timeline(data)
+        inserted_id = mongo.insert_timeline(data["posts"])
         
         nb_posts = len(data["posts"])
         total_posts += nb_posts
