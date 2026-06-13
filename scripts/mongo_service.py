@@ -15,9 +15,23 @@ class MongoService:
         if not items:
             return 0
 
+        from pymongo import UpdateOne
+        ops = []
+        now = datetime.utcnow()
         for item in items:
-            item["inserted_at"] = datetime.utcnow()
+            uri = item.get("uri")
+            if not uri:
+                continue
+            item.setdefault("inserted_at", now)
+            ops.append(UpdateOne(
+                {"uri": uri},
+                {"$setOnInsert": item},
+                upsert=True
+            ))
 
-        result = self.db.timeline.insert_many(items)
-        return len(result.inserted_ids)
+        if not ops:
+            return 0
+
+        result = self.db.timeline.bulk_write(ops)
+        return result.upserted_count
 

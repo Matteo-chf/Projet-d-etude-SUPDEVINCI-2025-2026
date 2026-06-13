@@ -14,3 +14,16 @@ tfidf_vectorizer:
   type: pickle.PickleDataset
   filepath: data/06_models/tfidf_vectorizer.pickle
   versioned: true
+
+kmeans_results:
+  type: pandas.ParquetDataset
+  filepath: data/07_model_output/kmeans_results.parquet
+
+kmeans_model:
+  type: pickle.PickleDataset
+  filepath: data/06_models/kmeans_model.pickle
+  versioned: true
+
+scored_posts:
+  type: pandas.ParquetDataset
+  filepath: data/07_model_output/scored_posts.parquet

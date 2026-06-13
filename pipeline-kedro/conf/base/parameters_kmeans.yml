@@ -1,0 +1,12 @@
+kmeans:
+  # Nombre de clusters thématiques
+  n_clusters: 20
+
+  # Reproductibilité
+  random_state: 42
+
+  # Nombre d'initialisations (meilleure stabilité)
+  n_init: 10
+
+  # Seuil de distance max pour considérer un post "proche" des sources fiables
+  reliability_threshold: 0.5

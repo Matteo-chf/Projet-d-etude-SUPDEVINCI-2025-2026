@@ -1,61 +1,80 @@
 import requests
 import json
 import time
-from urllib.parse import quote
 from mongo_service import MongoService
 
 API_URL = "https://bsky.social/xrpc/app.bsky.feed.searchPosts"
+
+KEYWORDS = [
+    # Presse et actualité générale
+    "news", "breaking news", "reuters", "bbc news", "apnews",
+    # Politique et société
+    "election", "politics", "government", "democracy", "parliament",
+    # Santé
+    "health", "vaccine", "covid", "who", "medicine",
+    # Environnement
+    "climate", "environment", "global warming",
+    # Économie
+    "economy", "inflation", "finance",
+    # Géopolitique
+    "ukraine", "war", "conflict", "migration",
+]
+
+PAGES_PER_KEYWORD = 10
+LIMIT_PER_PAGE = 100
+
 
 def load_token():
     with open("token.json", "r", encoding="utf-8") as f:
         return json.load(f)["accessJwt"]
 
-def get_posts(limit=100, cursor=None):
+
+def get_posts(keyword, limit=100, cursor=None):
     token = load_token()
     headers = {"Authorization": f"Bearer {token}"}
-
-    # Recherche mondiale avec un mot-clé générique qui renvoie beaucoup de posts
-    params = {"q": "news", "limit": limit}
+    params = {"q": keyword, "limit": limit}
     if cursor:
         params["cursor"] = cursor
 
     r = requests.get(API_URL, headers=headers, params=params, timeout=10)
-    
     if r.status_code != 200:
-        print(f"Erreur API: {r.status_code}")
+        print(f"  Erreur API {r.status_code} pour '{keyword}'")
         return None
-        
     return r.json()
+
 
 if __name__ == "__main__":
     mongo = MongoService()
-    print("🚀 Lancement du mode accéléré : Récupération de ~1 000 posts (Mondial)...")
-    
-    cursor = None
-    total_posts = 0
-    pages = 10 # 10 pages de 100 posts
-    
-    for i in range(pages):
-        print(f"🔄 Récupération de la page {i+1}/{pages}...")
-        data = get_posts(100, cursor)
-        
-        if not data or "posts" not in data or not data["posts"]:
-            print("❌ Plus de données à récupérer ou erreur.")
-            if data:
-                print("Touches du JSON recu:", data.keys())
-                print("JSON complet:", data)
-            break
-            
-        inserted_id = mongo.insert_timeline(data["posts"])
-        
-        nb_posts = len(data["posts"])
-        total_posts += nb_posts
-        print(f"✅ {nb_posts} posts insérés (ID: {inserted_id})")
-        
-        cursor = data.get("cursor")
-        if not cursor:
-            break
-            
-        time.sleep(1)
+    grand_total = 0
 
-    print(f"🎉 Terminé ! Un total de ~{total_posts} posts ont été ajoutés à MongoDB.")
+    estimated = len(KEYWORDS) * PAGES_PER_KEYWORD * LIMIT_PER_PAGE
+    print(f"Lancement : {len(KEYWORDS)} mots-cles x {PAGES_PER_KEYWORD} pages x {LIMIT_PER_PAGE} posts = ~{estimated} posts max")
+    print(f"(les doublons sont ignores automatiquement)\n")
+
+    for keyword in KEYWORDS:
+        print(f"[{keyword}]")
+        cursor = None
+        keyword_total = 0
+
+        for page in range(PAGES_PER_KEYWORD):
+            data = get_posts(keyword, LIMIT_PER_PAGE, cursor)
+
+            if not data or "posts" not in data or not data["posts"]:
+                print(f"  Fin a la page {page + 1}")
+                break
+
+            inserted = mongo.insert_timeline(data["posts"])
+            nb = len(data["posts"])
+            keyword_total += nb
+            grand_total += nb
+            print(f"  Page {page + 1} : {nb} recus, {inserted} nouveaux inseres")
+
+            cursor = data.get("cursor")
+            if not cursor:
+                break
+
+            time.sleep(0.5)
+
+        print(f"  Sous-total '{keyword}' : {keyword_total} posts\n")
+
+    print(f"Termine ! Total recu : ~{grand_total} posts (sans compter les doublons ignores)")
