@@ -53,29 +53,39 @@ def get_domain(url: str) -> str:
         return ""
 
 
-def search_web(query: str, max_results: int = MAX_TRUSTED) -> list[dict]:
+def search_web(query: str, max_results: int = MAX_TRUSTED) -> tuple[list[dict], str | None]:
     """
     Recherche des articles récents sur le sujet.
-    Retourne uniquement les résultats issus de sources fiables (filtrés par domaine).
+    Retourne (résultats_fiables, message_erreur_ou_None).
+    Retry automatique 3 fois avec délai croissant si DuckDuckGo rate-limite.
     """
-    try:
-        raw = DDGS().text(query, max_results=RAW_RESULTS)
-    except Exception as e:
-        print(f"  [Web Search] Erreur : {e}")
-        return []
+    import time
 
-    trusted = []
-    for r in raw:
-        url    = r.get("href", "")
-        domain = get_domain(url)
-        if domain in TRUSTED_DOMAINS:
-            trusted.append({
-                "title":         r.get("title", ""),
-                "url":           url,
-                "snippet":       r.get("body", ""),
-                "source_domain": domain,
-            })
-        if len(trusted) >= max_results:
-            break
+    last_error = None
+    for attempt in range(3):
+        try:
+            raw = list(DDGS().text(query, max_results=RAW_RESULTS))
+            trusted = []
+            for r in raw:
+                url    = r.get("href", "")
+                domain = get_domain(url)
+                if domain in TRUSTED_DOMAINS:
+                    trusted.append({
+                        "title":         r.get("title", ""),
+                        "url":           url,
+                        "snippet":       r.get("body", ""),
+                        "source_domain": domain,
+                    })
+                if len(trusted) >= max_results:
+                    break
+            return trusted, None
 
-    return trusted
+        except Exception as e:
+            last_error = e
+            wait = 2 ** attempt  # 1s, 2s, 4s
+            print(f"  [Web Search] Tentative {attempt + 1}/3 échouée : {e} — attente {wait}s")
+            time.sleep(wait)
+
+    msg = f"Recherche web indisponible (DuckDuckGo rate-limit ou réseau) : {last_error}"
+    print(f"  [Web Search] Abandon après 3 tentatives : {last_error}")
+    return [], msg

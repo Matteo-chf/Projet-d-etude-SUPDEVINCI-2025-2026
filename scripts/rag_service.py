@@ -104,9 +104,10 @@ class RAGCredibilityService:
         # --- RAG Web : recherche DuckDuckGo sur domaines fiables ---
         web_articles = []
         web_context  = ""
+        web_error    = None
         if use_web:
             print("  Recherche web en cours…")
-            web_articles = search_web(text, max_results=5)
+            web_articles, web_error = search_web(text, max_results=5)
             if web_articles:
                 web_blocks = []
                 for i, a in enumerate(web_articles, 1):
@@ -174,6 +175,7 @@ Réponds UNIQUEMENT en JSON valide avec exactement ces champs :
 
         result = json.loads(json_match.group())
         result["avg_similarity"] = round(avg_sim, 3)
-        result["sources_used"]   = retrieved   # sources MongoDB
+        result["sources_used"]   = retrieved    # sources MongoDB
         result["web_articles"]   = web_articles # articles web trouvés
+        result["web_error"]      = web_error    # None si OK, message si échec
         return result
