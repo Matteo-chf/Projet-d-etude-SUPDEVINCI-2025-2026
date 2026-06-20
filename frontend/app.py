@@ -60,7 +60,7 @@ html, body {
     color: #d4c89a !important;
     border-radius: 2px;
     text-align: left;
-    font-size: 0.79em;
+    font-size: 0.52em;
     padding: 7px 10px;
     width: 100%;
     white-space: nowrap;
@@ -335,21 +335,69 @@ html, body {
     font-family: 'Libre Baskerville', Georgia, serif;
 }
 
-/* ═══ ZONE SAISIE ═══ */
+/* ═══ ZONE SAISIE — Liquid Glass Apple style ═══ */
+
+/* Le verre est sur le CONTENEUR, pas sur le textarea */
+[data-testid="stTextArea"] > div,
+[data-testid="stTextArea"] > div > div {
+    background: linear-gradient(
+        160deg,
+        rgba(255, 255, 255, 0.38) 0%,
+        rgba(255, 255, 255, 0.12) 60%,
+        rgba(255, 255, 255, 0.20) 100%
+    ) !important;
+    backdrop-filter: blur(28px) saturate(160%) brightness(1.04) !important;
+    -webkit-backdrop-filter: blur(28px) saturate(160%) brightness(1.04) !important;
+    border-radius: 32px !important;
+    border: none !important;
+    box-shadow:
+        inset 0 1.5px 0 rgba(255, 255, 255, 0.85),
+        inset 0 -1px 0 rgba(255, 255, 255, 0.20),
+        0 6px 24px rgba(26, 18, 8, 0.07),
+        0 1px 3px rgba(26, 18, 8, 0.04) !important;
+    overflow: hidden !important;
+    transition: box-shadow 0.3s ease, background 0.3s ease !important;
+}
+
+/* Focus : éclat légèrement plus vif */
+[data-testid="stTextArea"] > div:focus-within,
+[data-testid="stTextArea"] > div > div:focus-within {
+    background: linear-gradient(
+        160deg,
+        rgba(255, 255, 255, 0.50) 0%,
+        rgba(255, 255, 255, 0.18) 60%,
+        rgba(255, 255, 255, 0.28) 100%
+    ) !important;
+    box-shadow:
+        inset 0 1.5px 0 rgba(255, 255, 255, 0.95),
+        inset 0 -1px 0 rgba(255, 255, 255, 0.30),
+        0 10px 36px rgba(26, 18, 8, 0.10),
+        0 2px 6px rgba(26, 18, 8, 0.05) !important;
+}
+
+/* Le textarea lui-même : complètement transparent */
 [data-testid="stTextArea"] textarea {
-    background: #fffdf6 !important;
-    border: 1px solid #1a1208 !important;
-    border-radius: 2px !important;
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    outline: none !important;
     font-family: 'Libre Baskerville', Georgia, serif !important;
     font-size: 0.9em !important;
     color: #1a1208 !important;
     resize: none !important;
+    padding: 20px 28px !important;
 }
 [data-testid="stTextArea"] textarea:focus {
-    border-color: #c9a84c !important;
-    box-shadow: 0 0 0 2px rgba(201,168,76,0.2) !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    outline: none !important;
 }
-[data-testid="stTextArea"] textarea::placeholder { color: #9a8a6a !important; font-style: italic; }
+[data-testid="stTextArea"] textarea::placeholder {
+    color: rgba(90, 74, 46, 0.38) !important;
+    font-style: italic;
+}
 
 /* ═══ BOUTON ANALYSER ═══ */
 [data-testid="stFormSubmitButton"] > button {
