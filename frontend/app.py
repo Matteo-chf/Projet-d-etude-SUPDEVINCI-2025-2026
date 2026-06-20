@@ -3,16 +3,13 @@ import sys
 import re
 import streamlit as st
 
-# --- Paths ---
 ROOT_DIR    = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SCRIPTS_DIR = os.path.join(ROOT_DIR, "scripts")
 sys.path.insert(0, SCRIPTS_DIR)
 
 from rag_service import RAGCredibilityService, LABEL_FR, LABEL_ICON
 
-# ──────────────────────────────────────────────
-# Page config
-# ──────────────────────────────────────────────
+# ── Page config ──────────────────────────────────────────────────────────────
 st.set_page_config(
     page_title="Fact-Checker IA",
     page_icon="🔍",
@@ -20,170 +17,387 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ──────────────────────────────────────────────
-# CSS global
-# ──────────────────────────────────────────────
+# ── CSS — Newspaper style, no page scroll ────────────────────────────────────
 st.markdown("""
 <style>
-/* ── Sidebar ── */
-[data-testid="stSidebar"] {
-    background: #0f172a;
-    border-right: 1px solid #1e293b;
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=IM+Fell+English&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap');
+
+/* ═══ BASE PAPIER ═══ */
+html, body {
+    overflow: hidden !important;
+    height: 100vh !important;
+    background: #f8f4ea !important;
 }
-[data-testid="stSidebar"] * { color: #e2e8f0 !important; }
+[data-testid="stAppViewContainer"] {
+    background: #f8f4ea !important;
+    overflow: hidden !important;
+    height: 100vh !important;
+}
+[data-testid="stMain"] {
+    background: #f8f4ea !important;
+    overflow: hidden !important;
+}
+[data-testid="block-container"] {
+    padding-top: 0.1rem !important;
+    padding-bottom: 0.4rem !important;
+    overflow: hidden !important;
+    max-height: 100vh !important;
+    font-family: 'Libre Baskerville', Georgia, serif !important;
+}
+
+/* ═══ SIDEBAR ═══ */
+[data-testid="stSidebar"] {
+    background: #1a1208 !important;
+    border-right: 3px double #c9a84c;
+}
+[data-testid="stSidebar"] * {
+    color: #e8dfc9 !important;
+    font-family: 'Libre Baskerville', Georgia, serif !important;
+}
 [data-testid="stSidebar"] .stButton > button {
     background: transparent;
-    border: 1px solid #1e293b;
-    color: #cbd5e1 !important;
-    border-radius: 10px;
+    border: 1px solid #3d2e14;
+    color: #d4c89a !important;
+    border-radius: 2px;
     text-align: left;
-    font-size: 0.82em;
-    padding: 8px 12px;
+    font-size: 0.79em;
+    padding: 7px 10px;
     width: 100%;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     transition: background 0.2s, border-color 0.2s;
+    font-family: 'Libre Baskerville', Georgia, serif !important;
 }
 [data-testid="stSidebar"] .stButton > button:hover {
-    background: #1e293b;
-    border-color: #334155;
+    background: #2c1f0a;
+    border-color: #c9a84c;
+}
+.sidebar-title {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 1.1em;
+    font-weight: 900;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #c9a84c !important;
+    border-bottom: 1px solid #3d2e14;
+    padding-bottom: 8px;
+    margin-bottom: 12px;
+}
+.hist-bar-wrap {
+    margin: -4px 0 10px 0;
+}
+.hist-bar-track {
+    background: #2c1f0a;
+    border-radius: 0;
+    height: 3px;
+    overflow: hidden;
+    margin-bottom: 2px;
+}
+.hist-bar-fill { height: 100%; }
+.hist-meta {
+    font-size: 0.67em;
+    color: #6b5a3e !important;
+    font-style: italic;
 }
 
-/* ── Tweet card (Bluesky) ── */
-.tweet-card {
-    border: 1px solid #bae6fd;
-    border-radius: 16px;
-    padding: 16px;
-    margin-bottom: 14px;
-    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-    transition: box-shadow 0.2s, transform 0.15s;
-    cursor: default;
+/* ═══ MASTHEAD ═══ */
+.masthead {
+    text-align: center;
+    border-top: 4px solid #1a1208;
+    border-bottom: 1px solid #1a1208;
+    padding: 8px 0 6px;
+    margin-bottom: 10px;
+    position: relative;
 }
-.tweet-card:hover {
-    box-shadow: 0 6px 24px rgba(0, 133, 255, 0.12);
-    transform: translateY(-2px);
-}
-
-/* ── Article preview card ── */
-.article-card {
-    border: 1px solid #e2e8f0;
-    border-radius: 14px;
-    padding: 16px;
-    margin-bottom: 14px;
-    background: #fff;
-    transition: box-shadow 0.2s, transform 0.15s, border-color 0.2s;
+.masthead::after {
+    content: '';
     display: block;
+    border-bottom: 3px solid #1a1208;
+    margin-top: 4px;
 }
-.article-card:hover {
-    box-shadow: 0 6px 20px rgba(0,0,0,0.09);
-    border-color: #94a3b8;
-    transform: translateY(-2px);
+.masthead-tag {
+    font-family: 'Libre Baskerville', Georgia, serif;
+    font-size: 0.62em;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: #5a4a2e;
+}
+.masthead-title {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 2.1em;
+    font-weight: 900;
+    color: #1a1208;
+    letter-spacing: -0.01em;
+    line-height: 1;
+    margin: 2px 0;
+}
+.masthead-sub {
+    font-family: 'Libre Baskerville', Georgia, serif;
+    font-size: 0.62em;
+    color: #8a7355;
+    font-style: italic;
+    letter-spacing: 0.08em;
 }
 
-/* ── Stat badges ── */
-.stat-row { display: flex; gap: 12px; margin-top: 14px; flex-wrap: wrap; }
-.stat-badge {
-    padding: 5px 14px;
-    border-radius: 999px;
-    font-size: 0.8em;
-    font-weight: 600;
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-}
-.stat-similar  { background: #dcfce7; color: #166534; }
-.stat-contra   { background: #fee2e2; color: #991b1b; }
-
-/* ── Verdict banner ── */
-.verdict-banner {
-    border-radius: 12px;
-    padding: 18px 22px;
-    margin-bottom: 24px;
+/* ═══ VERDICT ═══ */
+.verdict-wrap {
     border-left: 5px solid;
+    padding: 10px 14px;
+    margin-bottom: 10px;
+    background: #fffdf6;
+    border-top: 1px solid #d4c9a8;
+    border-right: 1px solid #d4c9a8;
+    border-bottom: 1px solid #d4c9a8;
+}
+.verdict-score {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 1.2em;
+    font-weight: 900;
+    margin-bottom: 3px;
+}
+.verdict-align {
+    font-size: 0.75em;
+    color: #5a4a2e;
+    font-style: italic;
+    margin-bottom: 6px;
+}
+.verdict-text {
+    font-family: 'Libre Baskerville', Georgia, serif;
+    font-size: 0.85em;
+    line-height: 1.6;
+    color: #1a1208;
 }
 
-/* ── Section titles ── */
-.section-title {
-    font-size: 1.05em;
+/* ═══ SECTION HEADER (style colonne de journal) ═══ */
+.col-header {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 0.88em;
     font-weight: 700;
-    margin-bottom: 14px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #1a1208;
+    border-top: 3px solid #1a1208;
+    border-bottom: 1px solid #1a1208;
+    padding: 4px 0;
+    margin-bottom: 8px;
+}
+
+/* ═══ ZONE SCROLLABLE CARTES ═══ */
+.cards-scroll {
+    max-height: 300px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 4px;
+}
+.cards-scroll::-webkit-scrollbar { width: 4px; }
+.cards-scroll::-webkit-scrollbar-track { background: #f0ebe0; }
+.cards-scroll::-webkit-scrollbar-thumb { background: #c9a84c; border-radius: 2px; }
+
+/* ═══ TWEET / BLUESKY CARD ═══ */
+.tweet-card {
+    border: 1px solid #c9d8e8;
+    border-left: 3px solid #1d9bf0;
+    background: #f7fbff;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+}
+.tweet-card:hover { background: #eef6ff; }
+.tweet-header {
     display: flex;
     align-items: center;
     gap: 8px;
-    color: #1e293b;
+    margin-bottom: 7px;
+}
+.tweet-avatar {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #1d9bf0, #0a6fc2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; flex-shrink: 0;
+}
+.tweet-meta { flex: 1; min-width: 0; }
+.tweet-name {
+    font-family: 'Libre Baskerville', Georgia, serif;
+    font-size: 0.78em;
+    font-weight: 700;
+    color: #1a1208;
+}
+.tweet-handle { font-size: 0.68em; color: #6b8299; }
+.sim-badge {
+    font-size: 0.68em;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 1px;
+    flex-shrink: 0;
+    font-family: 'Libre Baskerville', Georgia, serif;
+}
+.tweet-body {
+    font-family: 'Libre Baskerville', Georgia, serif;
+    font-size: 0.8em;
+    line-height: 1.55;
+    color: #1a1208;
 }
 
-/* ── Input zone ── */
-[data-testid="stTextArea"] textarea {
-    border-radius: 14px !important;
-    border: 2px solid #e2e8f0 !important;
-    font-size: 0.97em !important;
-    resize: none;
-    transition: border-color 0.2s !important;
+/* ═══ ARTICLE CARD (style coupure de presse) ═══ */
+.article-card {
+    border: 1px solid #c9b87a;
+    background: #fffdf6;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    display: block;
+    color: inherit;
+    text-decoration: none;
+    transition: background 0.15s;
 }
-[data-testid="stTextArea"] textarea:focus {
-    border-color: #3b82f6 !important;
-    box-shadow: 0 0 0 3px rgba(59,130,246,0.1) !important;
+.article-card:hover { background: #fdf8e8; }
+.article-source {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-bottom: 5px;
+}
+.article-domain {
+    font-family: 'Libre Baskerville', Georgia, serif;
+    font-size: 0.65em;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #5a4a2e;
+    border-bottom: 1px solid #c9b87a;
+    padding-bottom: 1px;
+}
+.article-title {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 0.9em;
+    font-weight: 700;
+    line-height: 1.3;
+    color: #1a1208;
+    margin-bottom: 5px;
+}
+.article-snippet {
+    font-family: 'Libre Baskerville', Georgia, serif;
+    font-size: 0.75em;
+    color: #4a3e2a;
+    line-height: 1.5;
+    font-style: italic;
 }
 
-/* ── Veracity gauge ── */
-.gauge-wrap { position: relative; margin: 8px 0 36px 0; }
+/* ═══ STATS ═══ */
+.stat-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+    border-top: 1px solid #d4c9a8;
+    padding-top: 6px;
+}
+.stat-badge {
+    font-family: 'Libre Baskerville', Georgia, serif;
+    font-size: 0.72em;
+    font-weight: 700;
+    padding: 2px 10px;
+    border-radius: 1px;
+    border: 1px solid currentColor;
+}
+.stat-sim  { color: #1a5c2e; background: #eaf6ee; }
+.stat-con  { color: #7a1a1a; background: #faeaea; }
+
+/* ═══ JAUGE ═══ */
+.gauge-wrap { position: relative; margin: 4px 0 28px 0; }
 .gauge-track {
-    height: 18px;
-    border-radius: 999px;
-    background: linear-gradient(to right, #ef4444 0%, #f59e0b 40%, #22c55e 70%);
+    height: 14px;
+    border-radius: 0;
+    background: linear-gradient(to right, #b91c1c 0%, #d97706 40%, #15803d 70%, #15803d 100%);
+    border: 1px solid #1a1208;
 }
 .gauge-thumb {
     position: absolute;
     top: 50%;
     transform: translate(-50%, -50%);
-    width: 36px;
-    height: 36px;
+    width: 28px; height: 28px;
     border-radius: 50%;
-    border: 3px solid white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.7em;
+    border: 2px solid #1a1208;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.62em;
     font-weight: 800;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+    font-family: 'Playfair Display', Georgia, serif;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    background: white;
+    color: #1a1208;
 }
 .gauge-labels {
     display: flex;
     justify-content: space-between;
-    font-size: 0.77em;
-    color: #94a3b8;
-    margin-top: 6px;
+    font-size: 0.67em;
+    color: #8a7355;
+    margin-top: 4px;
+    font-style: italic;
+    font-family: 'Libre Baskerville', Georgia, serif;
 }
 
-/* ── Empty state ── */
+/* ═══ ZONE SAISIE ═══ */
+[data-testid="stTextArea"] textarea {
+    background: #fffdf6 !important;
+    border: 1px solid #1a1208 !important;
+    border-radius: 2px !important;
+    font-family: 'Libre Baskerville', Georgia, serif !important;
+    font-size: 0.9em !important;
+    color: #1a1208 !important;
+    resize: none !important;
+}
+[data-testid="stTextArea"] textarea:focus {
+    border-color: #c9a84c !important;
+    box-shadow: 0 0 0 2px rgba(201,168,76,0.2) !important;
+}
+[data-testid="stTextArea"] textarea::placeholder { color: #9a8a6a !important; font-style: italic; }
+
+/* ═══ BOUTON ANALYSER ═══ */
+[data-testid="stFormSubmitButton"] > button {
+    background: #1a1208 !important;
+    color: #f8f4ea !important;
+    border: none !important;
+    border-radius: 2px !important;
+    font-family: 'Playfair Display', Georgia, serif !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.08em !important;
+    font-size: 0.85em !important;
+}
+[data-testid="stFormSubmitButton"] > button:hover {
+    background: #2c1f0a !important;
+    color: #c9a84c !important;
+}
+
+/* ═══ ÉTAT VIDE ═══ */
 .empty-state {
     text-align: center;
-    padding: 60px 20px;
-    color: #94a3b8;
+    padding: 30px 20px;
+    color: #8a7355;
+    font-family: 'Libre Baskerville', Georgia, serif;
 }
-.empty-state .big-icon { font-size: 3.5em; margin-bottom: 12px; }
-.empty-state h3 { color: #64748b; font-size: 1.1em; margin-bottom: 8px; }
+.empty-state .big-icon { font-size: 2.5em; margin-bottom: 8px; }
+.empty-state h3 {
+    font-family: 'Playfair Display', Georgia, serif;
+    color: #4a3e2a;
+    font-size: 1.1em;
+    margin-bottom: 6px;
+}
 
-/* ── Hide Streamlit branding ── */
+/* ═══ MASQUER BRANDING STREAMLIT ═══ */
 #MainMenu { visibility: hidden; }
 footer    { visibility: hidden; }
 .stDeployButton { display: none; }
+header[data-testid="stHeader"] { background: transparent !important; }
 </style>
 """, unsafe_allow_html=True)
 
 
-# ──────────────────────────────────────────────
-# Helpers
-# ──────────────────────────────────────────────
+# ── Helpers ───────────────────────────────────────────────────────────────────
 
 def label_color(label: str) -> str:
-    return {"reliable": "#22c55e", "unreliable": "#ef4444", "suspect": "#f59e0b"}.get(label, "#94a3b8")
+    return {"reliable": "#15803d", "unreliable": "#b91c1c", "suspect": "#b45309"}.get(label, "#5a4a2e")
 
 
 def bluesky_url(uri: str) -> str:
-    """Convert AT URI → bsky.app URL."""
     m = re.match(r"at://([^/]+)/[^/]+/(.+)", uri or "")
     if m:
         did, rkey = m.groups()
@@ -191,130 +405,107 @@ def bluesky_url(uri: str) -> str:
     return ""
 
 
-def sim_badge_color(sim: float) -> str:
+def sim_badge_style(sim: float) -> tuple[str, str]:
     if sim >= 0.55:
-        return "#22c55e"
+        return "#eaf6ee", "#1a5c2e"
     if sim >= 0.35:
-        return "#f59e0b"
-    return "#94a3b8"
+        return "#fef3cd", "#92400e"
+    return "#f5f0e8", "#5a4a2e"
 
 
-def render_tweet(src: dict):
-    sim   = src.get("similarity", 0)
-    text  = src.get("text", "")
-    uri   = src.get("uri", "")
-    url   = bluesky_url(uri)
-    color = sim_badge_color(sim)
-
-    link_open  = f'<a href="{url}" target="_blank" style="text-decoration:none;color:inherit;">' if url else ""
-    link_close = "</a>" if url else ""
-
-    st.markdown(f"""
-    {link_open}
-    <div class="tweet-card">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-        <div style="width:38px;height:38px;border-radius:50%;
-                    background:linear-gradient(135deg,#0085ff,#00c2ff);
-                    display:flex;align-items:center;justify-content:center;
-                    font-size:17px;flex-shrink:0;">🦋</div>
-        <div style="flex:1;min-width:0;">
-          <div style="font-weight:700;font-size:0.88em;color:#0f172a;">Média vérifié Bluesky</div>
-          <div style="font-size:0.75em;color:#64748b;">source fiable</div>
+def tweets_html(sources: list[dict]) -> str:
+    if not sources:
+        return '<p style="font-style:italic;color:#8a7355;font-size:0.82em;">Aucun post Bluesky trouvé.</p>'
+    html = ""
+    for src in sources:
+        sim   = src.get("similarity", 0)
+        text  = src.get("text", "")[:300]
+        uri   = src.get("uri", "")
+        url   = bluesky_url(uri)
+        bg, fg = sim_badge_style(sim)
+        link_o = f'<a href="{url}" target="_blank" style="text-decoration:none;">' if url else ""
+        link_c = "</a>" if url else ""
+        html += f"""
+        {link_o}
+        <div class="tweet-card">
+          <div class="tweet-header">
+            <div class="tweet-avatar">🦋</div>
+            <div class="tweet-meta">
+              <div class="tweet-name">Bluesky · Média vérifié</div>
+              <div class="tweet-handle">source fiable</div>
+            </div>
+            <div class="sim-badge" style="background:{bg};color:{fg};">{sim:.0%}</div>
+          </div>
+          <div class="tweet-body">{text}{"…" if len(src.get("text",""))>300 else ""}</div>
         </div>
-        <div style="background:{color}22;color:{color};
-                    padding:3px 10px;border-radius:999px;
-                    font-size:0.75em;font-weight:700;flex-shrink:0;">{sim:.0%}</div>
-      </div>
-      <div style="font-size:0.88em;line-height:1.55;color:#1e293b;">
-        {text[:300]}{"…" if len(text) > 300 else ""}
-      </div>
-    </div>
-    {link_close}
-    """, unsafe_allow_html=True)
+        {link_c}"""
+    return html
 
 
-def render_article(article: dict):
-    title   = article.get("title", "Sans titre")
-    url     = article.get("url", "#")
-    snippet = article.get("snippet", "")
-    domain  = article.get("source_domain", "")
-    favicon = f"https://www.google.com/s2/favicons?domain={domain}&sz=32"
-
-    st.markdown(f"""
-    <a href="{url}" target="_blank" style="text-decoration:none;">
-    <div class="article-card">
-      <div style="display:flex;align-items:center;gap:7px;margin-bottom:10px;">
-        <img src="{favicon}" width="14" height="14"
-             style="border-radius:3px;"
-             onerror="this.style.display='none'" />
-        <span style="font-size:0.73em;color:#64748b;font-weight:700;
-                     text-transform:uppercase;letter-spacing:0.06em;">{domain}</span>
-      </div>
-      <div style="font-weight:700;font-size:0.92em;line-height:1.4;
-                  margin-bottom:8px;color:#0f172a;">{title}</div>
-      <div style="font-size:0.82em;color:#475569;line-height:1.5;">
-        {snippet[:180]}{"…" if len(snippet) > 180 else ""}
-      </div>
-    </div>
-    </a>
-    """, unsafe_allow_html=True)
+def articles_html(articles: list[dict]) -> str:
+    if not articles:
+        return '<p style="font-style:italic;color:#8a7355;font-size:0.82em;">Aucun article trouvé.</p>'
+    html = ""
+    for a in articles:
+        title   = a.get("title", "Sans titre")
+        url     = a.get("url", "#")
+        snippet = a.get("snippet", "")[:180]
+        domain  = a.get("source_domain", "")
+        favicon = f"https://www.google.com/s2/favicons?domain={domain}&sz=32"
+        html += f"""
+        <a href="{url}" target="_blank" class="article-card">
+          <div class="article-source">
+            <img src="{favicon}" width="12" height="12"
+                 onerror="this.style.display='none'" style="vertical-align:middle;"/>
+            <span class="article-domain">{domain}</span>
+          </div>
+          <div class="article-title">{title}</div>
+          <div class="article-snippet">{snippet}{"…" if len(a.get("snippet",""))>180 else ""}</div>
+        </a>"""
+    return html
 
 
-def render_stat_row(similar: int, contra: int):
-    st.markdown(f"""
+def stat_row_html(similar: int, contra: int) -> str:
+    s = "s" if similar > 1 else ""
+    c = "ent" if contra > 1 else ""
+    return f"""
     <div class="stat-row">
-      <span class="stat-badge stat-similar">✓ {similar} similaire{"s" if similar > 1 else ""}</span>
-      <span class="stat-badge stat-contra">✗ {contra} qui contredit{"" if contra <= 1 else "ent"}</span>
-    </div>
-    """, unsafe_allow_html=True)
+      <span class="stat-badge stat-sim">✓ {similar} similaire{s}</span>
+      <span class="stat-badge stat-con">✗ {contra} qui contredit{c}</span>
+    </div>"""
 
 
-def render_gauge(score: int, label: str):
+def gauge_html(score: int, label: str) -> str:
     color = label_color(label)
-    st.markdown(f"""
+    return f"""
     <div class="gauge-wrap">
       <div class="gauge-track"></div>
-      <div class="gauge-thumb" style="left:{score}%;background:{color};color:white;">
-        {score}
-      </div>
+      <div class="gauge-thumb" style="left:{score}%;border-color:{color};color:{color};">{score}</div>
     </div>
     <div class="gauge-labels">
-      <span>0 — Non fiable</span>
-      <span>40 — Suspect</span>
-      <span>70 — Fiable</span>
-      <span>100</span>
-    </div>
-    """, unsafe_allow_html=True)
+      <span>0 — Non fiable</span><span>40 — Suspect</span>
+      <span>70 — Fiable</span><span>100</span>
+    </div>"""
 
 
-# ──────────────────────────────────────────────
-# RAG service (cached, chargé une seule fois)
-# ──────────────────────────────────────────────
+# ── RAG service (chargé une seule fois) ──────────────────────────────────────
 @st.cache_resource(show_spinner=False)
 def get_service():
     return RAGCredibilityService()
 
 
-# ──────────────────────────────────────────────
-# Session state
-# ──────────────────────────────────────────────
-if "history" not in st.session_state:
-    st.session_state.history = []
-if "current" not in st.session_state:
-    st.session_state.current = None
-if "analyzing" not in st.session_state:
-    st.session_state.analyzing = False
+# ── Session state ─────────────────────────────────────────────────────────────
+if "history"  not in st.session_state: st.session_state.history  = []
+if "current"  not in st.session_state: st.session_state.current  = None
 
 
-# ──────────────────────────────────────────────
-# Sidebar — Historique
-# ──────────────────────────────────────────────
+# ── Sidebar — Historique ──────────────────────────────────────────────────────
 with st.sidebar:
-    st.markdown("### 📂 Historique")
+    st.markdown('<div class="sidebar-title">&#128240; Historique</div>', unsafe_allow_html=True)
 
     if not st.session_state.history:
         st.markdown(
-            '<div style="color:#475569;font-size:0.82em;margin-top:8px;">'
+            '<div style="color:#6b5a3e;font-size:0.78em;font-style:italic;">'
             "Vos analyses apparaîtront ici.</div>",
             unsafe_allow_html=True,
         )
@@ -325,39 +516,38 @@ with st.sidebar:
             label  = res.get("credibility_label", "suspect")
             icon   = LABEL_ICON.get(label, "⚠️")
             color  = label_color(label)
-            preview = item["news"][:42] + "…" if len(item["news"]) > 42 else item["news"]
+            preview = item["news"][:44] + "…" if len(item["news"]) > 44 else item["news"]
 
-            if st.button(f"{icon} {preview}", key=f"hist_{idx}", use_container_width=True):
+            if st.button(f"{icon}  {preview}", key=f"hist_{idx}", use_container_width=True):
                 st.session_state.current = item
                 st.rerun()
 
             st.markdown(f"""
-            <div style="margin:-6px 0 10px 0;">
-              <div style="background:#1e293b;border-radius:999px;height:5px;overflow:hidden;">
-                <div style="width:{score}%;background:{color};height:100%;border-radius:999px;"></div>
+            <div class="hist-bar-wrap">
+              <div class="hist-bar-track">
+                <div class="hist-bar-fill" style="width:{score}%;background:{color};"></div>
               </div>
-              <div style="font-size:0.7em;color:#64748b;margin-top:3px;">
-                {score}% — {LABEL_FR.get(label, label)}
-              </div>
-            </div>
-            """, unsafe_allow_html=True)
+              <div class="hist-meta">{score} pts — {LABEL_FR.get(label, label)}</div>
+            </div>""", unsafe_allow_html=True)
 
 
-# ──────────────────────────────────────────────
-# Header
-# ──────────────────────────────────────────────
-st.markdown(
-    '<h1 style="margin-bottom:4px;">🔍 Fact-Checker IA</h1>'
-    '<p style="color:#64748b;margin-top:0;">Analysez la crédibilité d\'une news grâce à l\'IA, '
-    'des posts Bluesky et des articles de presse fiables.</p>',
-    unsafe_allow_html=True,
-)
-st.divider()
+# ── Masthead ──────────────────────────────────────────────────────────────────
+st.markdown("""
+<div class="masthead">
+  <div class="masthead-tag">— Intelligence Artificielle & Vérification des faits —</div>
+  <div class="masthead-title">FACT CHECKER IA</div>
+  <div class="masthead-sub">Bluesky · Presse internationale · Mistral AI</div>
+</div>
+""", unsafe_allow_html=True)
 
 
-# ──────────────────────────────────────────────
-# Zone de résultat
-# ──────────────────────────────────────────────
+# ── Zone résultat ─────────────────────────────────────────────────────────────
+ALIGN_FR = {
+    "confirmed":    "confirmée par les sources",
+    "contradicted": "contredite par les sources",
+    "not_covered":  "non couverte par les sources disponibles",
+}
+
 if st.session_state.current:
     res          = st.session_state.current["result"]
     score        = res.get("credibility_score", 0)
@@ -366,121 +556,103 @@ if st.session_state.current:
     alignment    = res.get("alignment", "not_covered")
     sources_used = res.get("sources_used", [])
     web_articles = res.get("web_articles", [])
+    web_error    = res.get("web_error")
     color        = label_color(label)
     icon         = LABEL_ICON.get(label, "⚠️")
 
-    ALIGN_FR = {
-        "confirmed":   "confirmée par les sources",
-        "contradicted": "contredite par les sources",
-        "not_covered":  "non couverte par les sources disponibles",
-    }
-
-    # 1. Verdict + justification LLM
+    # 1. Verdict LLM
     st.markdown(f"""
-    <div class="verdict-banner"
-         style="background:{color}0f;border-left-color:{color};">
-      <div style="font-size:1.25em;font-weight:800;color:{color};margin-bottom:8px;">
+    <div class="verdict-wrap" style="border-left-color:{color};">
+      <div class="verdict-score" style="color:{color};">
         {icon} {LABEL_FR.get(label, label)} — {score}/100
       </div>
-      <div style="font-size:0.82em;color:#64748b;margin-bottom:10px;font-style:italic;">
-        Information {ALIGN_FR.get(alignment, alignment)}
-      </div>
-      <div style="font-size:0.97em;line-height:1.65;color:#1e293b;">{justif}</div>
+      <div class="verdict-align">Information {ALIGN_FR.get(alignment, alignment)}</div>
+      <div class="verdict-text">{justif}</div>
     </div>
     """, unsafe_allow_html=True)
 
-    # 2. Deux colonnes — Posts Bluesky | Articles web
-    col_l, col_r = st.columns(2, gap="large")
+    # 2. Deux colonnes scrollables
+    col_l, col_r = st.columns(2, gap="medium")
+
+    similar_posts    = len(sources_used)
+    contra_posts     = 1 if alignment == "contradicted" else 0
+    similar_articles = len(web_articles)
+    contra_articles  = 1 if alignment == "contradicted" else 0
 
     with col_l:
-        st.markdown('<div class="section-title">🦋 Posts Bluesky</div>', unsafe_allow_html=True)
-        if sources_used:
-            for src in sources_used:
-                render_tweet(src)
-        else:
-            st.caption("Aucun post Bluesky trouvé pour cette news.")
-
-        # Compteurs posts
-        similar_posts = len(sources_used)
-        contra_posts  = 1 if alignment == "contradicted" else 0
-        render_stat_row(similar_posts, contra_posts)
+        st.markdown("""
+        <div class="col-header">🦋&nbsp; Posts Bluesky</div>
+        """, unsafe_allow_html=True)
+        st.markdown(f"""
+        <div class="cards-scroll">{tweets_html(sources_used)}</div>
+        {stat_row_html(similar_posts, contra_posts)}
+        """, unsafe_allow_html=True)
 
     with col_r:
-        st.markdown('<div class="section-title">📰 Articles web</div>', unsafe_allow_html=True)
-        web_error = res.get("web_error")
+        st.markdown("""
+        <div class="col-header">📰&nbsp; Articles de presse</div>
+        """, unsafe_allow_html=True)
         if web_error:
-            st.warning(f"⚠️ Recherche web indisponible — DuckDuckGo rate-limit ou réseau.\n\nRéessayez dans quelques secondes.", icon="🌐")
-        elif web_articles:
-            for article in web_articles:
-                render_article(article)
+            st.markdown(f"""
+            <div style="font-family:'Libre Baskerville',Georgia,serif;font-size:0.8em;
+                        border:1px solid #c9b87a;padding:10px;background:#fffdf6;
+                        color:#7a4a1a;font-style:italic;">
+              ⚠ Recherche web temporairement indisponible.<br/>
+              <span style="font-size:0.9em;">DuckDuckGo rate-limit — réessayez dans quelques secondes.</span>
+            </div>
+            {stat_row_html(0, 0)}
+            """, unsafe_allow_html=True)
         else:
-            st.caption("Aucun article web trouvé pour cette news.")
+            st.markdown(f"""
+            <div class="cards-scroll">{articles_html(web_articles)}</div>
+            {stat_row_html(similar_articles, contra_articles)}
+            """, unsafe_allow_html=True)
 
-        # Compteurs articles
-        similar_articles = len(web_articles)
-        contra_articles  = 1 if alignment == "contradicted" else 0
-        render_stat_row(similar_articles, contra_articles)
-
-    st.divider()
-
-    # 3. Barre de véracité
-    st.markdown('<div class="section-title">📊 Score de véracité</div>', unsafe_allow_html=True)
-    render_gauge(score, label)
 
 else:
-    # État vide — pas encore d'analyse
     st.markdown("""
     <div class="empty-state">
       <div class="big-icon">🔍</div>
       <h3>Prêt à analyser une news</h3>
-      <p style="font-size:0.88em;">
-        Entrez le texte d'une actualité ci-dessous.<br/>
-        L'IA croisera des posts Bluesky fiables et des articles de presse pour évaluer sa crédibilité.
+      <p style="font-size:0.83em;">
+        Saisissez le texte d'une actualité ci-dessous.<br/>
+        L'IA croisera posts Bluesky et articles de presse pour évaluer sa crédibilité.
       </p>
     </div>
     """, unsafe_allow_html=True)
 
 
-# ──────────────────────────────────────────────
-# Zone de saisie (toujours en bas)
-# ──────────────────────────────────────────────
-st.markdown("<br/>", unsafe_allow_html=True)
+# ── Zone de saisie ────────────────────────────────────────────────────────────
+st.markdown(
+    '<div style="border-top:2px solid #1a1208;margin-top:6px;"></div>',
+    unsafe_allow_html=True,
+)
 
 with st.form("news_form", clear_on_submit=True):
     news_input = st.text_area(
         "news_input",
-        placeholder="Collez ou tapez une news à vérifier… (ex : \"Le gouvernement annule la réforme des retraites\")",
-        height=90,
+        placeholder="Saisissez ou collez ici le texte d'une news à vérifier…",
+        height=68,
         label_visibility="collapsed",
     )
-    col_left, col_right = st.columns([5, 1])
-    with col_right:
-        submitted = st.form_submit_button(
-            "🔍 Analyser",
-            use_container_width=True,
-            type="primary",
-        )
+    _, col_btn = st.columns([5, 1])
+    with col_btn:
+        submitted = st.form_submit_button("Analyser ›", use_container_width=True, type="primary")
 
 if submitted and news_input.strip():
-    # Archive l'analyse courante dans l'historique
     if st.session_state.current:
         st.session_state.history.append(st.session_state.current)
 
-    with st.spinner("Analyse en cours… (embedding + recherche web + Mistral)"):
+    with st.spinner("Analyse en cours…"):
         try:
             service = get_service()
             result  = service.score(news_input.strip())
             st.session_state.current = {"news": news_input.strip(), "result": result}
         except FileNotFoundError as e:
-            st.error(
-                f"Index RAG introuvable.\n\n"
-                f"Construisez-le d'abord :\n"
-                f"```\npython scripts/8_build_rag_index.py\n```\n\n{e}"
-            )
+            st.error(f"Index RAG introuvable. Lancez d'abord :\n```\npython scripts/8_build_rag_index.py\n```")
         except Exception as e:
-            st.error(f"Erreur lors de l'analyse : {e}")
-
+            st.error(f"Erreur : {e}")
     st.rerun()
 
-elif submitted and not news_input.strip():
+elif submitted:
     st.warning("Entrez une news avant de lancer l'analyse.")
