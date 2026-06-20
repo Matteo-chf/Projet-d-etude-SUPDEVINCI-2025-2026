@@ -16,4 +16,4 @@ numpy                      # manipulation des matrices d'embeddings
 mistralai                  # appel à l'API Mistral pour générer le score de crédibilité
 
 # === RAG Web ===
-duckduckgo-search          # recherche web gratuite sans clé API, filtrée sur sources fiables
+ddgs                       # recherche web gratuite sans clé API (successeur de duckduckgo-search)
