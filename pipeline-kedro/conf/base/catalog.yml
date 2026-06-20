@@ -27,3 +27,16 @@ kmeans_model:
 scored_posts:
   type: pandas.ParquetDataset
   filepath: data/07_model_output/scored_posts.parquet
+
+embedded_posts:
+  type: pandas.ParquetDataset
+  filepath: data/04_feature/embedded_posts.parquet
+
+credibility_model:
+  type: pickle.PickleDataset
+  filepath: data/06_models/credibility_model.pickle
+  versioned: true
+
+credibility_scores:
+  type: pandas.ParquetDataset
+  filepath: data/07_model_output/credibility_scores.parquet

@@ -1,0 +1,21 @@
+credibility:
+  # Modèle d'embedding sémantique (multilingue, 384 dimensions)
+  model_name: "paraphrase-multilingual-MiniLM-L12-v2"
+  batch_size: 32
+
+  # Logistic Regression
+  classifier:
+    C: 1.0          # régularisation (plus petit = plus régularisé)
+    max_iter: 1000
+    random_state: 42
+
+  # Seuil de classification
+  # score >= threshold       → reliable
+  # score < (1 - threshold)  → unreliable
+  # entre les deux           → suspect
+  reliability_threshold: 0.6
+
+  # Nombre de clusters K-Means entraînés sur les posts "reliable"
+  # Chaque cluster représente un "thème" de contenu fiable détecté automatiquement.
+  # Un post éloigné de tous les clusters reçoit un score de crédibilité bas.
+  n_clusters: 10

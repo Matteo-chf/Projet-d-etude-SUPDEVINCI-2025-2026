@@ -1,9 +1,19 @@
-requests
-pymongo
-dotenv
-pandas
-matplotlib
-seaborn
-scikit-learn
-kedro
-kedro-datasets[pandas,pickle,matplotlib]
+# === Collecte de données Bluesky ===
+requests                   # appels HTTP à l'API Bluesky
+
+# === Base de données ===
+pymongo                    # connexion et opérations MongoDB
+
+# === Configuration ===
+python-dotenv              # lecture du fichier .env
+
+# === RAG — Embeddings & similarité ===
+sentence-transformers      # modèle MiniLM pour vectoriser les textes
+scikit-learn               # cosine_similarity + normalize
+numpy                      # manipulation des matrices d'embeddings
+
+# === RAG — LLM scoring ===
+mistralai                  # appel à l'API Mistral pour générer le score de crédibilité
+
+# === RAG Web ===
+duckduckgo-search          # recherche web gratuite sans clé API, filtrée sur sources fiables
