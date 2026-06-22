@@ -608,6 +608,22 @@ if st.session_state.current:
     color        = label_color(label)
     icon         = LABEL_ICON.get(label, "⚠️")
 
+    # 0. News soumise
+    news_preview = st.session_state.current["news"]
+    st.markdown(f"""
+    <div style="font-family:'Libre Baskerville',Georgia,serif;
+                font-size:0.8em;color:#5a4a2e;
+                border-left:3px solid #c9b87a;
+                padding:6px 12px;margin-bottom:8px;
+                font-style:italic;">
+      <span style="font-size:0.75em;font-weight:700;letter-spacing:0.1em;
+                   text-transform:uppercase;font-style:normal;color:#8a7355;">
+        News analysée
+      </span><br/>
+      {news_preview}
+    </div>
+    """, unsafe_allow_html=True)
+
     # 1. Verdict LLM
     st.markdown(f"""
     <div class="verdict-wrap" style="border-left-color:{color};">
