@@ -1,6 +1,10 @@
 import os
 import sys
 import re
+import html as html_lib
+from concurrent.futures import ThreadPoolExecutor
+
+import spacy
 import streamlit as st
 
 ROOT_DIR    = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -8,6 +12,10 @@ SCRIPTS_DIR = os.path.join(ROOT_DIR, "scripts")
 sys.path.insert(0, SCRIPTS_DIR)
 
 from rag_service import RAGCredibilityService, LABEL_FR, LABEL_ICON
+from web_search_service import search_wikipedia
+
+# Tags spaCy considérés comme nom propre / nom commun
+NOUN_POS = {"NOUN", "PROPN"}
 
 # ── Page config ──────────────────────────────────────────────────────────────
 st.set_page_config(
@@ -239,6 +247,33 @@ html, body {
     color: #1a1208;
 }
 
+.article-date {
+    font-size: 0.62em;
+    color: #8a7355;
+    font-style: italic;
+    margin-left: auto;
+}
+
+/* ═══ QUESTION + NOMS CLIQUABLES (zone Wikipédia) ═══ */
+.wiki-question {
+    font-family: 'Libre Baskerville', Georgia, serif;
+    font-size: 0.78em;
+    line-height: 1.6;
+    color: #1a1208;
+    border: 1px solid #c9c2d8;
+    border-left: 3px solid #5a5a8a;
+    background: #fbfaff;
+    padding: 9px 12px;
+    margin-bottom: 10px;
+}
+.wiki-noun-link {
+    color: #3d3d6b;
+    text-decoration: none;
+    border-bottom: 1px dotted #5a5a8a;
+    transition: background 0.15s;
+}
+.wiki-noun-link:hover { background: #ece9f7; }
+
 /* ═══ ARTICLE CARD (style coupure de presse) ═══ */
 .article-card {
     border: 1px solid #c9b87a;
@@ -461,56 +496,130 @@ def sim_badge_style(sim: float) -> tuple[str, str]:
     return "#f5f0e8", "#5a4a2e"
 
 
+def esc(value: str) -> str:
+    """Échappe le HTML et neutralise les retours à la ligne (qui casseraient le bloc markdown)."""
+    return html_lib.escape(str(value or "")).replace("\n", " ").replace("\r", " ")
+
+
 def tweets_html(sources: list[dict]) -> str:
     if not sources:
         return '<p style="font-style:italic;color:#8a7355;font-size:0.82em;">Aucun post Bluesky trouvé.</p>'
-    html = ""
+    cards = []
     for src in sources:
         sim   = src.get("similarity", 0)
         text  = src.get("text", "")[:300]
         uri   = src.get("uri", "")
         url   = bluesky_url(uri)
         bg, fg = sim_badge_style(sim)
-        link_o = f'<a href="{url}" target="_blank" style="text-decoration:none;">' if url else ""
-        link_c = "</a>" if url else ""
-        html += f"""
-        {link_o}
-        <div class="tweet-card">
-          <div class="tweet-header">
-            <div class="tweet-avatar">🦋</div>
-            <div class="tweet-meta">
-              <div class="tweet-name">Bluesky · Média vérifié</div>
-              <div class="tweet-handle">source fiable</div>
-            </div>
-            <div class="sim-badge" style="background:{bg};color:{fg};">{sim:.0%}</div>
-          </div>
-          <div class="tweet-body">{text}{"…" if len(src.get("text",""))>300 else ""}</div>
-        </div>
-        {link_c}"""
-    return html
+        ellipsis = "…" if len(src.get("text", "")) > 300 else ""
+        card = (
+            f'<div class="tweet-card">'
+            f'<div class="tweet-header">'
+            f'<div class="tweet-avatar">🦋</div>'
+            f'<div class="tweet-meta">'
+            f'<div class="tweet-name">Bluesky · Média vérifié</div>'
+            f'<div class="tweet-handle">source fiable</div>'
+            f'</div>'
+            f'<div class="sim-badge" style="background:{bg};color:{fg};">{sim:.0%}</div>'
+            f'</div>'
+            f'<div class="tweet-body">{esc(text)}{ellipsis}</div>'
+            f'</div>'
+        )
+        if url:
+            card = f'<a href="{esc(url)}" target="_blank" style="text-decoration:none;">{card}</a>'
+        cards.append(card)
+    return "".join(cards)
 
 
 def articles_html(articles: list[dict]) -> str:
     if not articles:
         return '<p style="font-style:italic;color:#8a7355;font-size:0.82em;">Aucun article trouvé.</p>'
-    html = ""
+    cards = []
     for a in articles:
-        title   = a.get("title", "Sans titre")
-        url     = a.get("url", "#")
+        title   = esc(a.get("title", "Sans titre"))
+        url     = esc(a.get("url", "#"))
         snippet = a.get("snippet", "")[:180]
-        domain  = a.get("source_domain", "")
-        favicon = f"https://www.google.com/s2/favicons?domain={domain}&sz=32"
-        html += f"""
-        <a href="{url}" target="_blank" class="article-card">
-          <div class="article-source">
-            <img src="{favicon}" width="12" height="12"
-                 onerror="this.style.display='none'" style="vertical-align:middle;"/>
-            <span class="article-domain">{domain}</span>
-          </div>
-          <div class="article-title">{title}</div>
-          <div class="article-snippet">{snippet}{"…" if len(a.get("snippet",""))>180 else ""}</div>
-        </a>"""
-    return html
+        ellipsis = "…" if len(a.get("snippet", "")) > 180 else ""
+        domain  = esc(a.get("source_domain", ""))
+        date    = esc((a.get("date") or "")[:10])
+        favicon = f"https://www.google.com/s2/favicons?domain={domain}&amp;sz=32"
+        date_html = f'<span class="article-date">{date}</span>' if date else ""
+        cards.append(
+            f'<a href="{url}" target="_blank" class="article-card">'
+            f'<div class="article-source">'
+            f'<img src="{favicon}" width="12" height="12" '
+            f'onerror="this.style.display=\'none\'" style="vertical-align:middle;"/>'
+            f'<span class="article-domain">{domain}</span>'
+            f'{date_html}'
+            f'</div>'
+            f'<div class="article-title">{title}</div>'
+            f'<div class="article-snippet">{esc(snippet)}{ellipsis}</div>'
+            f'</a>'
+        )
+    return "".join(cards)
+
+
+@st.cache_resource(show_spinner=False)
+def get_nlp():
+    return spacy.load("fr_core_news_sm")
+
+
+@st.cache_data(show_spinner=False, max_entries=2000)
+def _wiki_url_for(word: str) -> str | None:
+    """Recherche Wikipédia pour un seul mot — mis en cache pour éviter les requêtes répétées."""
+    result = search_wikipedia(word)
+    return result["url"] if result else None
+
+
+def linkify_nouns(text: str) -> str:
+    """
+    Rend chaque nom propre et nom commun du texte cliquable vers sa page Wikipédia
+    (si elle existe). Les entités multi-mots (ex: "Emmanuel Macron") sont liées en un
+    seul lien plutôt qu'un lien par mot. Les mots sans page correspondante restent
+    du texte simple.
+    """
+    if not text:
+        return ""
+
+    doc = get_nlp()(text)
+
+    # Entités nommées multi-mots : un seul lien pour toute l'entité (ex: "Donald Trump")
+    entity_start = {ent.start: ent for ent in doc.ents}
+    covered      = {i for ent in doc.ents for i in range(ent.start, ent.end)}
+
+    candidates = {ent.text for ent in doc.ents}
+    candidates |= {t.text for t in doc if t.i not in covered and t.pos_ in NOUN_POS and len(t.text) > 2}
+
+    links: dict[str, str | None] = {}
+    if candidates:
+        candidates = list(candidates)
+        with ThreadPoolExecutor(max_workers=8) as executor:
+            links = dict(zip(candidates, executor.map(_wiki_url_for, candidates)))
+
+    parts = []
+    i = 0
+    while i < len(doc):
+        ent = entity_start.get(i)
+        if ent is not None:
+            surface = doc.text[ent.start_char:ent.end_char]
+            url = links.get(ent.text)
+            if url:
+                parts.append(f'<a href="{esc(url)}" target="_blank" class="wiki-noun-link">{esc(surface)}</a>')
+            else:
+                parts.append(esc(surface))
+            parts.append(esc(doc[ent.end - 1].whitespace_))
+            i = ent.end
+            continue
+
+        tok = doc[i]
+        url = links.get(tok.text) if tok.pos_ in NOUN_POS else None
+        if url:
+            parts.append(f'<a href="{esc(url)}" target="_blank" class="wiki-noun-link">{esc(tok.text)}</a>')
+        else:
+            parts.append(esc(tok.text))
+        parts.append(esc(tok.whitespace_))
+        i += 1
+    return "".join(parts)
 
 
 def stat_row_html(similar: int, contra: int) -> str:
@@ -653,6 +762,14 @@ if st.session_state.current:
         """, unsafe_allow_html=True)
 
     with col_r:
+        st.markdown("""
+        <div class="col-header">📖&nbsp; Wikipédia</div>
+        """, unsafe_allow_html=True)
+        st.markdown(
+            f'<div class="wiki-question">{linkify_nouns(news_preview)}</div>',
+            unsafe_allow_html=True,
+        )
+
         st.markdown("""
         <div class="col-header">📰&nbsp; Articles de presse</div>
         """, unsafe_allow_html=True)

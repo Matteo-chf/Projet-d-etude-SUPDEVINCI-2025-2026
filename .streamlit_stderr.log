@@ -1,3 +1,4 @@
+2026-06-22 14:02:47.513 Examining the path of torch.classes raised: Tried to instantiate class '__path__._path', but it does not exist! Ensure that it is registered via torch::class_
 [transformers] Accessing `__path__` from `.models.aria.image_processing_aria`. Returning `__path__` instead. Behavior may be different and this alias will be removed in future versions.
 [transformers] Accessing `__path__` from `.models.aria.image_processing_pil_aria`. Returning `__path__` instead. Behavior may be different and this alias will be removed in future versions.
 [transformers] Accessing `__path__` from `.models.auto.image_processing_auto`. Returning `__path__` instead. Behavior may be different and this alias will be removed in future versions.
@@ -193,9 +194,14 @@
 [transformers] Accessing `__path__` from `.models.yolos.image_processing_yolos`. Returning `__path__` instead. Behavior may be different and this alias will be removed in future versions.
 [transformers] Accessing `__path__` from `.models.zoedepth.image_processing_pil_zoedepth`. Returning `__path__` instead. Behavior may be different and this alias will be removed in future versions.
 [transformers] Accessing `__path__` from `.models.zoedepth.image_processing_zoedepth`. Returning `__path__` instead. Behavior may be different and this alias will be removed in future versions.
-2026-06-22 11:01:34.497 Examining the path of torch.classes raised: Tried to instantiate class '__path__._path', but it does not exist! Ensure that it is registered via torch::class_
 Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
-Loading weights:   0%|          | 0/199 [00:00<?, ?it/s]Loading weights: 100%|##########| 199/199 [00:00<00:00, 3071.46it/s]
+Loading weights:   0%|          | 0/199 [00:00<?, ?it/s]Loading weights: 100%|##########| 199/199 [00:00<00:00, 4667.87it/s]
+2026-06-22 14:03:27.924 Thread 'ThreadPoolExecutor-2_0': missing ScriptRunContext
+2026-06-22 14:03:27.924 Thread 'ThreadPoolExecutor-2_1': missing ScriptRunContext
+2026-06-22 14:03:27.924 Thread 'ThreadPoolExecutor-2_2': missing ScriptRunContext
+2026-06-22 14:03:27.924 Thread 'ThreadPoolExecutor-2_3': missing ScriptRunContext
+2026-06-22 14:03:27.924 Thread 'ThreadPoolExecutor-2_4': missing ScriptRunContext
+2026-06-22 14:03:28.115 Examining the path of torch.classes raised: Tried to instantiate class '__path__._path', but it does not exist! Ensure that it is registered via torch::class_
 [transformers] Accessing `__path__` from `.models.aria.image_processing_aria`. Returning `__path__` instead. Behavior may be different and this alias will be removed in future versions.
 [transformers] Accessing `__path__` from `.models.aria.image_processing_pil_aria`. Returning `__path__` instead. Behavior may be different and this alias will be removed in future versions.
 [transformers] Accessing `__path__` from `.models.auto.image_processing_auto`. Returning `__path__` instead. Behavior may be different and this alias will be removed in future versions.
@@ -391,4 +397,118 @@ Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF
 [transformers] Accessing `__path__` from `.models.yolos.image_processing_yolos`. Returning `__path__` instead. Behavior may be different and this alias will be removed in future versions.
 [transformers] Accessing `__path__` from `.models.zoedepth.image_processing_pil_zoedepth`. Returning `__path__` instead. Behavior may be different and this alias will be removed in future versions.
 [transformers] Accessing `__path__` from `.models.zoedepth.image_processing_zoedepth`. Returning `__path__` instead. Behavior may be different and this alias will be removed in future versions.
-2026-06-22 11:23:41.657 Examining the path of torch.classes raised: Tried to instantiate class '__path__._path', but it does not exist! Ensure that it is registered via torch::class_
+2026-06-22 14:03:28.407 Thread 'ThreadPoolExecutor-2_0': missing ScriptRunContext
+2026-06-22 14:03:28.436 Thread 'ThreadPoolExecutor-2_4': missing ScriptRunContext
+2026-06-22 14:03:28.473 Thread 'ThreadPoolExecutor-2_2': missing ScriptRunContext
+2026-06-22 14:03:28.655 Thread 'ThreadPoolExecutor-2_1': missing ScriptRunContext
+2026-06-22 14:03:29.036 Thread 'ThreadPoolExecutor-2_3': missing ScriptRunContext
+2026-06-22 14:05:20.860 Thread 'ThreadPoolExecutor-3_0': missing ScriptRunContext
+2026-06-22 14:05:20.861 Thread 'ThreadPoolExecutor-3_1': missing ScriptRunContext
+2026-06-22 14:05:20.862 Thread 'ThreadPoolExecutor-3_2': missing ScriptRunContext
+2026-06-22 14:05:20.868 Thread 'ThreadPoolExecutor-3_3': missing ScriptRunContext
+2026-06-22 14:05:20.871 Thread 'ThreadPoolExecutor-3_4': missing ScriptRunContext
+2026-06-22 14:05:21.223 Thread 'ThreadPoolExecutor-3_2': missing ScriptRunContext
+2026-06-22 14:05:21.232 Thread 'ThreadPoolExecutor-3_4': missing ScriptRunContext
+2026-06-22 14:05:21.234 Thread 'ThreadPoolExecutor-3_1': missing ScriptRunContext
+2026-06-22 14:05:21.384 Thread 'ThreadPoolExecutor-3_0': missing ScriptRunContext
+2026-06-22 14:05:21.576 Thread 'ThreadPoolExecutor-3_3': missing ScriptRunContext
+2026-06-22 14:05:27.191 Thread 'ThreadPoolExecutor-4_0': missing ScriptRunContext
+2026-06-22 14:05:27.191 Thread 'ThreadPoolExecutor-4_1': missing ScriptRunContext
+2026-06-22 14:05:27.191 Thread 'ThreadPoolExecutor-4_2': missing ScriptRunContext
+2026-06-22 14:05:27.191 Thread 'ThreadPoolExecutor-4_3': missing ScriptRunContext
+2026-06-22 14:05:27.191 Thread 'ThreadPoolExecutor-4_4': missing ScriptRunContext
+2026-06-22 14:05:27.729 Thread 'ThreadPoolExecutor-4_4': missing ScriptRunContext
+2026-06-22 14:05:27.746 Thread 'ThreadPoolExecutor-4_0': missing ScriptRunContext
+2026-06-22 14:05:27.783 Thread 'ThreadPoolExecutor-4_2': missing ScriptRunContext
+2026-06-22 14:05:27.794 Thread 'ThreadPoolExecutor-4_3': missing ScriptRunContext
+2026-06-22 14:05:28.238 Thread 'ThreadPoolExecutor-4_1': missing ScriptRunContext
+2026-06-22 14:07:13.871 Thread 'ThreadPoolExecutor-5_0': missing ScriptRunContext
+2026-06-22 14:07:13.873 Thread 'ThreadPoolExecutor-5_1': missing ScriptRunContext
+2026-06-22 14:07:13.874 Thread 'ThreadPoolExecutor-5_2': missing ScriptRunContext
+2026-06-22 14:07:13.880 Thread 'ThreadPoolExecutor-5_3': missing ScriptRunContext
+2026-06-22 14:07:13.882 Thread 'ThreadPoolExecutor-5_4': missing ScriptRunContext
+2026-06-22 14:07:14.309 Thread 'ThreadPoolExecutor-5_4': missing ScriptRunContext
+2026-06-22 14:07:14.332 Thread 'ThreadPoolExecutor-5_2': missing ScriptRunContext
+2026-06-22 14:07:14.503 Thread 'ThreadPoolExecutor-5_3': missing ScriptRunContext
+2026-06-22 14:07:14.529 Thread 'ThreadPoolExecutor-5_0': missing ScriptRunContext
+2026-06-22 14:07:14.828 Thread 'ThreadPoolExecutor-5_1': missing ScriptRunContext
+2026-06-22 14:07:23.233 Thread 'ThreadPoolExecutor-6_0': missing ScriptRunContext
+2026-06-22 14:07:23.235 Thread 'ThreadPoolExecutor-6_1': missing ScriptRunContext
+2026-06-22 14:07:23.236 Thread 'ThreadPoolExecutor-6_2': missing ScriptRunContext
+2026-06-22 14:07:23.242 Thread 'ThreadPoolExecutor-6_3': missing ScriptRunContext
+2026-06-22 14:07:23.244 Thread 'ThreadPoolExecutor-6_4': missing ScriptRunContext
+2026-06-22 14:07:23.246 Thread 'ThreadPoolExecutor-6_5': missing ScriptRunContext
+2026-06-22 14:07:23.746 Thread 'ThreadPoolExecutor-6_2': missing ScriptRunContext
+2026-06-22 14:07:23.800 Thread 'ThreadPoolExecutor-6_0': missing ScriptRunContext
+2026-06-22 14:07:23.805 Thread 'ThreadPoolExecutor-6_4': missing ScriptRunContext
+2026-06-22 14:07:23.940 Thread 'ThreadPoolExecutor-6_5': missing ScriptRunContext
+2026-06-22 14:07:23.980 Thread 'ThreadPoolExecutor-6_1': missing ScriptRunContext
+2026-06-22 14:07:24.019 Thread 'ThreadPoolExecutor-6_3': missing ScriptRunContext
+2026-06-22 14:11:29.926 Thread 'ThreadPoolExecutor-7_0': missing ScriptRunContext
+2026-06-22 14:11:29.926 Thread 'ThreadPoolExecutor-7_1': missing ScriptRunContext
+2026-06-22 14:11:29.926 Thread 'ThreadPoolExecutor-7_2': missing ScriptRunContext
+2026-06-22 14:11:29.926 Thread 'ThreadPoolExecutor-7_3': missing ScriptRunContext
+2026-06-22 14:11:29.926 Thread 'ThreadPoolExecutor-7_4': missing ScriptRunContext
+2026-06-22 14:11:29.926 Thread 'ThreadPoolExecutor-7_5': missing ScriptRunContext
+2026-06-22 14:11:30.330 Thread 'ThreadPoolExecutor-7_2': missing ScriptRunContext
+2026-06-22 14:11:30.347 Thread 'ThreadPoolExecutor-7_0': missing ScriptRunContext
+2026-06-22 14:11:30.386 Thread 'ThreadPoolExecutor-7_3': missing ScriptRunContext
+2026-06-22 14:11:30.514 Thread 'ThreadPoolExecutor-7_5': missing ScriptRunContext
+2026-06-22 14:11:30.530 Thread 'ThreadPoolExecutor-7_1': missing ScriptRunContext
+2026-06-22 14:11:30.703 Thread 'ThreadPoolExecutor-7_4': missing ScriptRunContext
+2026-06-22 14:11:36.052 Thread 'ThreadPoolExecutor-8_0': missing ScriptRunContext
+2026-06-22 14:11:36.053 Thread 'ThreadPoolExecutor-8_1': missing ScriptRunContext
+2026-06-22 14:11:36.057 Thread 'ThreadPoolExecutor-8_2': missing ScriptRunContext
+2026-06-22 14:11:36.059 Thread 'ThreadPoolExecutor-8_3': missing ScriptRunContext
+2026-06-22 14:11:36.582 Thread 'ThreadPoolExecutor-8_3': missing ScriptRunContext
+2026-06-22 14:11:36.589 Thread 'ThreadPoolExecutor-8_1': missing ScriptRunContext
+2026-06-22 14:11:36.589 Thread 'ThreadPoolExecutor-8_0': missing ScriptRunContext
+2026-06-22 14:11:36.621 Thread 'ThreadPoolExecutor-8_2': missing ScriptRunContext
+2026-06-22 14:28:05.427 Thread 'ThreadPoolExecutor-9_0': missing ScriptRunContext
+2026-06-22 14:28:05.432 Thread 'ThreadPoolExecutor-9_1': missing ScriptRunContext
+2026-06-22 14:28:05.432 Thread 'ThreadPoolExecutor-9_2': missing ScriptRunContext
+2026-06-22 14:28:05.432 Thread 'ThreadPoolExecutor-9_3': missing ScriptRunContext
+2026-06-22 14:28:05.923 Thread 'ThreadPoolExecutor-9_0': missing ScriptRunContext
+2026-06-22 14:28:05.926 Thread 'ThreadPoolExecutor-9_1': missing ScriptRunContext
+2026-06-22 14:28:05.959 Thread 'ThreadPoolExecutor-9_3': missing ScriptRunContext
+2026-06-22 14:28:06.129 Thread 'ThreadPoolExecutor-9_2': missing ScriptRunContext
+2026-06-22 14:28:11.197 Thread 'ThreadPoolExecutor-10_0': missing ScriptRunContext
+2026-06-22 14:28:11.814 Thread 'ThreadPoolExecutor-10_0': missing ScriptRunContext
+2026-06-22 15:27:42.873 Thread 'ThreadPoolExecutor-11_0': missing ScriptRunContext
+2026-06-22 15:27:43.396 Thread 'ThreadPoolExecutor-11_0': missing ScriptRunContext
+2026-06-22 15:27:49.694 Thread 'ThreadPoolExecutor-12_0': missing ScriptRunContext
+2026-06-22 15:27:49.694 Thread 'ThreadPoolExecutor-12_1': missing ScriptRunContext
+2026-06-22 15:27:49.694 Thread 'ThreadPoolExecutor-12_2': missing ScriptRunContext
+2026-06-22 15:27:50.171 Thread 'ThreadPoolExecutor-12_2': missing ScriptRunContext
+2026-06-22 15:27:50.277 Thread 'ThreadPoolExecutor-12_0': missing ScriptRunContext
+2026-06-22 15:27:50.366 Thread 'ThreadPoolExecutor-12_1': missing ScriptRunContext
+2026-06-22 15:28:41.978 Thread 'ThreadPoolExecutor-13_0': missing ScriptRunContext
+2026-06-22 15:28:41.978 Thread 'ThreadPoolExecutor-13_1': missing ScriptRunContext
+2026-06-22 15:28:41.978 Thread 'ThreadPoolExecutor-13_2': missing ScriptRunContext
+2026-06-22 15:28:42.364 Thread 'ThreadPoolExecutor-13_0': missing ScriptRunContext
+2026-06-22 15:28:42.375 Thread 'ThreadPoolExecutor-13_2': missing ScriptRunContext
+2026-06-22 15:28:42.670 Thread 'ThreadPoolExecutor-13_1': missing ScriptRunContext
+2026-06-22 15:28:48.049 Thread 'ThreadPoolExecutor-14_0': missing ScriptRunContext
+2026-06-22 15:28:48.049 Thread 'ThreadPoolExecutor-14_1': missing ScriptRunContext
+2026-06-22 15:28:48.049 Thread 'ThreadPoolExecutor-14_2': missing ScriptRunContext
+2026-06-22 15:28:48.049 Thread 'ThreadPoolExecutor-14_3': missing ScriptRunContext
+2026-06-22 15:28:48.588 Thread 'ThreadPoolExecutor-14_0': missing ScriptRunContext
+2026-06-22 15:28:48.662 Thread 'ThreadPoolExecutor-14_2': missing ScriptRunContext
+2026-06-22 15:28:48.905 Thread 'ThreadPoolExecutor-14_1': missing ScriptRunContext
+2026-06-22 15:28:49.111 Thread 'ThreadPoolExecutor-14_3': missing ScriptRunContext
+2026-06-22 15:31:02.397 Thread 'ThreadPoolExecutor-15_0': missing ScriptRunContext
+2026-06-22 15:31:02.399 Thread 'ThreadPoolExecutor-15_1': missing ScriptRunContext
+2026-06-22 15:31:02.399 Thread 'ThreadPoolExecutor-15_2': missing ScriptRunContext
+2026-06-22 15:31:02.401 Thread 'ThreadPoolExecutor-15_3': missing ScriptRunContext
+2026-06-22 15:31:02.842 Thread 'ThreadPoolExecutor-15_0': missing ScriptRunContext
+2026-06-22 15:31:02.842 Thread 'ThreadPoolExecutor-15_2': missing ScriptRunContext
+2026-06-22 15:31:03.001 Thread 'ThreadPoolExecutor-15_3': missing ScriptRunContext
+2026-06-22 15:31:03.081 Thread 'ThreadPoolExecutor-15_1': missing ScriptRunContext
+2026-06-22 15:31:12.519 Thread 'ThreadPoolExecutor-16_0': missing ScriptRunContext
+2026-06-22 15:31:12.519 Thread 'ThreadPoolExecutor-16_1': missing ScriptRunContext
+2026-06-22 15:31:12.535 Thread 'ThreadPoolExecutor-16_2': missing ScriptRunContext
+2026-06-22 15:31:12.535 Thread 'ThreadPoolExecutor-16_3': missing ScriptRunContext
+2026-06-22 15:31:13.120 Thread 'ThreadPoolExecutor-16_0': missing ScriptRunContext
+2026-06-22 15:31:13.127 Thread 'ThreadPoolExecutor-16_2': missing ScriptRunContext
+2026-06-22 15:31:13.312 Thread 'ThreadPoolExecutor-16_1': missing ScriptRunContext
+2026-06-22 15:31:13.360 Thread 'ThreadPoolExecutor-16_3': missing ScriptRunContext

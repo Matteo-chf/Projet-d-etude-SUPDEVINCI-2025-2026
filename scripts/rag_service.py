@@ -12,7 +12,7 @@ import os         # lecture des variables d'environnement
 import re         # nettoyage du texte et extraction JSON
 
 from mistralai.client import Mistral                    # client officiel pour l'API Mistral (v2+)
-from web_search_service import search_web               # recherche DuckDuckGo sur sources fiables
+from web_search_service import search_web                # recherche DuckDuckGo sur sources fiables
 import numpy as np                                      # matrices d'embeddings
 from dotenv import find_dotenv, load_dotenv             # chargement du .env
 from sentence_transformers import SentenceTransformer   # modèle MiniLM (embeddings 384 dims)
@@ -101,7 +101,7 @@ class RAGCredibilityService:
             mongo_blocks.append(f"Source base {i} (similarité={sim_pct}) :\n{snippet}")
         mongo_context = "\n\n".join(mongo_blocks)
 
-        # --- RAG Web : recherche DuckDuckGo sur domaines fiables ---
+        # --- RAG Web : recherche DuckDuckGo sur domaines fiables (triés du plus récent au plus ancien) ---
         web_articles = []
         web_context  = ""
         web_error    = None
@@ -114,7 +114,9 @@ class RAGCredibilityService:
                     snippet = a.get("snippet", "")[:300].strip()
                     domain  = a.get("source_domain", "")
                     title   = a.get("title", "")
-                    web_blocks.append(f"Article web {i} [{domain}] — {title} :\n{snippet}")
+                    date    = a.get("date", "")
+                    date_tag = f" ({date[:10]})" if date else ""
+                    web_blocks.append(f"Article web {i} [{domain}]{date_tag} — {title} :\n{snippet}")
                 web_context = "\n\n".join(web_blocks)
 
         # Indique à Mistral si le sujet est couvert dans la base locale
@@ -122,18 +124,18 @@ class RAGCredibilityService:
             f"Similarité moyenne base locale : {avg_sim:.0%}. "
             + ("Sujet bien représenté dans la base."
                if avg_sim >= SIMILARITY_THRESHOLD
-               else "Sujet PEU représenté dans la base locale — s'appuyer davantage sur les articles web.")
+               else "Sujet PEU représenté dans la base locale.")
         )
 
         # Prompt combiné : contexte MongoDB + contexte web
         web_section = f"""
-=== ARTICLES WEB RÉCENTS TROUVÉS (sources fiables) ===
+=== ARTICLES WEB TROUVÉS (sources fiables, du plus récent au plus ancien) ===
 {web_context if web_context else "Aucun article web trouvé pour cette requête."}
 """ if use_web else ""
 
         prompt = f"""Tu es un expert en fact-checking. Tu disposes de deux sources d'information :
-1. Une base de posts Bluesky issus de médias vérifiés (Reuters, BBC, AFP, Le Monde…)
-2. Des articles web récents trouvés sur ces mêmes sources fiables
+1. Des articles web (presse) récents trouvés sur des sources fiables — PRIORITAIRES dans ton analyse
+2. Une base de posts Bluesky issus de médias vérifiés (Reuters, BBC, AFP, Le Monde…) — source complémentaire
 
 Analyse si l'information suivante est confirmée, contredite ou non couverte.
 
@@ -150,7 +152,11 @@ Analyse si l'information suivante est confirmée, contredite ou non couverte.
 - Si l'information est CONFIRMÉE par les sources → score entre 70 et 100.
 - Si l'information est CONTREDITE par les sources → score entre 0 et 39.
 - Si le sujet est PEU COUVERT ou l'information AMBIGUË → score entre 40 et 69.
-- Les articles web récents ont plus de poids si la base locale est peu couverte.
+- Pondération : les articles web (presse) comptent plus que les posts Bluesky dans la décision finale.
+  Les articles web les plus récents (listés en premier) doivent peser davantage que les plus anciens.
+- En cas de désaccord entre les deux sources, privilégie ce qui est confirmé ou contredit par les
+  articles web ; les posts Bluesky restent un indice complémentaire à prendre en compte, jamais à ignorer.
+- S'il n'y a aucun article web mais que les posts Bluesky couvrent bien le sujet, base-toi sur eux.
 
 Réponds UNIQUEMENT en JSON valide avec exactement ces champs :
 {{
@@ -176,6 +182,6 @@ Réponds UNIQUEMENT en JSON valide avec exactement ces champs :
         result = json.loads(json_match.group())
         result["avg_similarity"] = round(avg_sim, 3)
         result["sources_used"]   = retrieved    # sources MongoDB
-        result["web_articles"]   = web_articles # articles web trouvés
+        result["web_articles"]   = web_articles # articles web trouvés (du plus récent au plus ancien)
         result["web_error"]      = web_error    # None si OK, message si échec
         return result
