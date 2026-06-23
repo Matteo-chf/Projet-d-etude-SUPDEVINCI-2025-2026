@@ -1,14 +1,18 @@
 import os
 import sys
 import re
+import glob
+import pickle
 import html as html_lib
 from concurrent.futures import ThreadPoolExecutor
 
 import spacy
 import streamlit as st
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
 ROOT_DIR    = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SCRIPTS_DIR = os.path.join(ROOT_DIR, "scripts")
+MODELS_DIR  = os.path.join(ROOT_DIR, "pipeline-kedro", "data", "06_models")
 sys.path.insert(0, SCRIPTS_DIR)
 
 from rag_service import RAGCredibilityService, LABEL_FR, LABEL_ICON
@@ -61,6 +65,20 @@ html, body {
 [data-testid="stSidebar"] * {
     color: #e8dfc9 !important;
     font-family: 'Libre Baskerville', Georgia, serif !important;
+}
+/* L'icone de repli de la sidebar utilise une police d'icones (ligatures) :
+   l'override de police ci-dessus la cassait et affichait le nom litteral
+   de l'icone ("keyboard_double_arrow_left") au lieu de la fleche. */
+[data-testid="stSidebar"] [data-testid="stIconMaterial"] {
+    font-family: 'Material Symbols Rounded', 'Material Symbols Outlined', sans-serif !important;
+    color: #d4c89a !important;
+}
+/* Bouton pour rouvrir la sidebar (visible quand elle est repliee) : la couleur
+   par defaut de Streamlit est trop claire sur le fond papier, on la fonce. */
+[data-testid="stExpandSidebarButton"] [data-testid="stIconMaterial"] {
+    font-family: 'Material Symbols Rounded', 'Material Symbols Outlined', sans-serif !important;
+    color: #1a1208 !important;
+    opacity: 1 !important;
 }
 [data-testid="stSidebar"] .stButton > button {
     background: transparent;
@@ -175,6 +193,28 @@ html, body {
     font-size: 0.85em;
     line-height: 1.6;
     color: #1a1208;
+}
+
+/* ═══ CLASSIFICATION LOCALE (TF-IDF + VADER + Logistic Regression) ═══ */
+.classif-box {
+    border-left: 4px solid;
+    padding: 7px 10px;
+    margin-bottom: 10px;
+    background: #fbf9f2;
+    border-top: 1px solid #d4c9a8;
+    border-right: 1px solid #d4c9a8;
+    border-bottom: 1px solid #d4c9a8;
+}
+.classif-score {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 0.95em;
+    font-weight: 800;
+}
+.classif-sub {
+    font-size: 0.68em;
+    color: #8a7355;
+    font-style: italic;
+    margin-top: 2px;
 }
 
 /* ═══ SECTION HEADER (style colonne de journal) ═══ */
@@ -651,6 +691,61 @@ def get_service():
     return RAGCredibilityService()
 
 
+# ── Modèle local de classification (TF-IDF + VADER + Logistic Regression) ────
+_vader_analyzer = SentimentIntensityAnalyzer()
+
+
+def _clean_for_classifier(text: str) -> str:
+    """Même nettoyage que la pipeline nlp_cleaning, pour rester cohérent avec l'entraînement."""
+    text = text.lower()
+    text = re.sub(r"http\S+|www\S+", "", text)
+    text = re.sub(r"@\w+", "", text)
+    text = re.sub(r"#\w+", "", text)
+    text = re.sub(r"[^\w\s]", " ", text)
+    return re.sub(r"\s+", " ", text).strip()
+
+
+@st.cache_resource(show_spinner=False)
+def get_classifier():
+    """Charge le vectorizer TF-IDF et le classifieur de la pipeline kedro 'classification'."""
+    vec_files = sorted(glob.glob(os.path.join(MODELS_DIR, "tfidf_vectorizer.pickle", "*", "*.pickle")))
+    clf_files = sorted(glob.glob(os.path.join(MODELS_DIR, "classifier_model.pickle", "*", "*.pickle")))
+    if not vec_files or not clf_files:
+        return None, None
+    with open(vec_files[-1], "rb") as f:
+        vectorizer = pickle.load(f)
+    with open(clf_files[-1], "rb") as f:
+        classifier = pickle.load(f)
+    return vectorizer, classifier
+
+
+def classify_local(text: str) -> dict | None:
+    """
+    Score de fiabilité via le modèle entraîné localement (pipeline kedro 'classification').
+    Indépendant du RAG : pas d'appel réseau, pas de Mistral.
+    """
+    vectorizer, classifier = get_classifier()
+    if vectorizer is None or classifier is None:
+        return None
+
+    cleaned = _clean_for_classifier(text)
+    if not cleaned:
+        return None
+
+    emo = _vader_analyzer.polarity_scores(cleaned)
+    tfidf_vec = vectorizer.transform([cleaned]).toarray()[0]
+    features  = list(tfidf_vec) + [emo["neg"], emo["neu"], emo["pos"], emo["compound"]]
+
+    proba = classifier.predict_proba([features])[0]
+    score = float(proba[1])  # proba de la classe "reliable"
+
+    return {
+        "score": score,
+        "label": "reliable" if score >= 0.5 else "unreliable",
+        "confidence": float(max(proba)),
+    }
+
+
 # ── Session state ─────────────────────────────────────────────────────────────
 if "history"  not in st.session_state: st.session_state.history  = []
 if "current"  not in st.session_state: st.session_state.current  = None
@@ -716,6 +811,7 @@ if st.session_state.current:
     web_error    = res.get("web_error")
     color        = label_color(label)
     icon         = LABEL_ICON.get(label, "⚠️")
+    classif      = st.session_state.current.get("classification")
 
     # 0. News soumise
     news_preview = st.session_state.current["news"]
@@ -753,6 +849,22 @@ if st.session_state.current:
     contra_articles  = 1 if alignment == "contradicted" else 0
 
     with col_l:
+        if classif:
+            classif_color = label_color(classif["label"])
+            classif_pct   = round(classif["score"] * 100)
+            classif_icon  = LABEL_ICON.get(classif["label"], "⚠️")
+            st.markdown("""
+            <div class="col-header">🧮&nbsp; Analyse Classification</div>
+            """, unsafe_allow_html=True)
+            st.markdown(f"""
+            <div class="classif-box" style="border-left-color:{classif_color};">
+              <div class="classif-score" style="color:{classif_color};">
+                {classif_icon} {LABEL_FR.get(classif["label"], classif["label"])} — {classif_pct}%
+              </div>
+              <div class="classif-sub">Modèle local : TF-IDF + émotion (VADER) + régression logistique</div>
+            </div>
+            """, unsafe_allow_html=True)
+
         st.markdown("""
         <div class="col-header">🦋&nbsp; Posts Bluesky</div>
         """, unsafe_allow_html=True)
@@ -826,9 +938,14 @@ if submitted and news_input.strip():
 
     with st.spinner("Analyse en cours…"):
         try:
-            service = get_service()
-            result  = service.score(news_input.strip())
-            st.session_state.current = {"news": news_input.strip(), "result": result}
+            service       = get_service()
+            result        = service.score(news_input.strip())
+            classification = classify_local(news_input.strip())
+            st.session_state.current = {
+                "news": news_input.strip(),
+                "result": result,
+                "classification": classification,
+            }
         except FileNotFoundError as e:
             st.error(f"Index RAG introuvable. Lancez d'abord :\n```\npython scripts/10_build_rag_index.py\n```")
         except Exception as e:
