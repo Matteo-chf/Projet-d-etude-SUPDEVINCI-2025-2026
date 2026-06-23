@@ -1,9 +1,7 @@
 import re
 import pickle
-import pandas as pd
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
-import os
 from pathlib import Path
 import glob
 
