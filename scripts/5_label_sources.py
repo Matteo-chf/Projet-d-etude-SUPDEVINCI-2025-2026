@@ -14,6 +14,7 @@
 # Résultat stocké dans le champ "source_label" de chaque document MongoDB.
 
 from urllib.parse import urlparse
+from pymongo import UpdateOne
 from mongo_service import MongoService
 
 # Domaines de confiance : presse vérifiée, institutions, fact-checkers
@@ -82,11 +83,15 @@ TRUSTED_DOMAINS = {
 }
 
 # Domaines non fiables : sites connus pour la désinformation
+# (mêmes domaines que ceux ciblés par le bootstrap, cf. 4_bootstrap_data.py)
 UNTRUSTED_DOMAINS = {
     "infowars.com", "naturalnews.com", "thegatewaypundit.com",
     "breitbart.com", "rt.com", "sputniknews.com", "tass.com",
     "beforeitsnews.com", "worldnewsdailyreport.com",
     "yournewswire.com", "newspunch.com",
+    "davidicke.com", "100percentfedup.com", "humansarefree.com",
+    "zerohedge.com", "theepochtimes.com", "oann.com",
+    "veteranstoday.com", "lifesitenews.com", "globalresearch.ca",
 }
 
 
@@ -194,14 +199,28 @@ def run():
     stats        = {"reliable": 0, "unreliable": 0, "unknown": 0}
     source_stats = {"handle": 0, "url": 0, "none": 0}
 
-    for doc in collection.find():
-        label, source = label_document(doc)
-        collection.update_one(
-            {"_id": doc["_id"]},
-            {"$set": {"source_label": label, "label_source": source}}
-        )
-        stats[label]        += 1
-        source_stats[source] += 1
+    BATCH_SIZE = 1000
+    batch = []
+
+    cursor = collection.find(batch_size=BATCH_SIZE)
+    try:
+        for doc in cursor:
+            label, source = label_document(doc)
+            batch.append(UpdateOne(
+                {"_id": doc["_id"]},
+                {"$set": {"source_label": label, "label_source": source}}
+            ))
+            stats[label]        += 1
+            source_stats[source] += 1
+
+            if len(batch) >= BATCH_SIZE:
+                collection.bulk_write(batch, ordered=False)
+                batch.clear()
+
+        if batch:
+            collection.bulk_write(batch, ordered=False)
+    finally:
+        cursor.close()
 
     print("Resultats du labeling :")
     print(f"  reliable    : {stats['reliable']}")

@@ -1,6 +1,7 @@
 from bluesky_api import get_full_timeline
 from mongo_service import MongoService
 
+# Importe le fil d'actualite de l'utilisateur connecte dans MongoDB
 def run():
     mongo = MongoService()
     timeline = get_full_timeline(limit_per_call=100, max_pages=5)

@@ -1,0 +1,12 @@
+# Paramètres du classifieur baseline (TF-IDF + VADER -> reliable/unreliable)
+# Utilisés par le pipeline 'classification'
+
+classification:
+  # Proportion du jeu labelisé réservée au test
+  test_size: 0.2
+
+  # Reproductibilité
+  random_state: 42
+
+  # Pondération des classes (compense le déséquilibre reliable/unreliable)
+  class_weight: balanced

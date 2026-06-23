@@ -33,9 +33,9 @@ with DAG(
         bash_command="cd /opt/airflow/pipeline-kedro && kedro run --pipeline vectorization"
     )
 
-    kmeans = BashOperator(
-        task_id="kmeans",
-        bash_command="cd /opt/airflow/pipeline-kedro && kedro run --pipeline kmeans"
+    classification = BashOperator(
+        task_id="classification",
+        bash_command="cd /opt/airflow/pipeline-kedro && kedro run --pipeline classification"
     )
 
     reporting = BashOperator(
@@ -43,4 +43,4 @@ with DAG(
         bash_command="cd /opt/airflow/pipeline-kedro && kedro run --pipeline reporting"
     )
 
-    ingest >> nlp_cleaning >> vectorization >> kmeans >> reporting
+    ingest >> nlp_cleaning >> vectorization >> classification >> reporting

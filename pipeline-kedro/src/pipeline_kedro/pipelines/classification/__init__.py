@@ -1,4 +1,6 @@
-"""Complete reporting pipeline for the spaceflights tutorial"""
+"""
+Pipeline 'classification'
+"""
 
 from .pipeline import create_pipeline
 

@@ -7,7 +7,10 @@ kedro-viz>=6.7.0
 scikit-learn~=1.5.1
 seaborn~=0.12.1
 matplotlib~=3.7.1
-pandas~=2.0.3   
+pandas~=2.0.3
 pymongo~=4.3.3
 python-dotenv~=0.21.0
+vaderSentiment~=3.3.2
+sqlalchemy~=2.0
+psycopg2-binary~=2.9
 

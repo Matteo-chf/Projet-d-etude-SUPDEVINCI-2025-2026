@@ -1,80 +1,53 @@
-import requests
-import json
-import time
+from bluesky_api import bootstrap_from_keywords
 from mongo_service import MongoService
 
-API_URL = "https://bsky.social/xrpc/app.bsky.feed.searchPosts"
-
-KEYWORDS = [
+# Mots-cles generiques d'actualite, pour constituer un corpus large de posts
+GENERAL_KEYWORDS = [
     # Presse et actualité générale
-    "news", "breaking news", "reuters", "bbc news", "apnews",
+    "news", "breaking news", "reuters", "bbc news", "apnews", "afp",
+    "press release", "headline", "exclusive",
     # Politique et société
     "election", "politics", "government", "democracy", "parliament",
+    "president", "senate", "congress", "vote", "policy",
     # Santé
-    "health", "vaccine", "covid", "who", "medicine",
+    "health", "vaccine", "covid", "who", "medicine", "hospital",
+    "pandemic", "outbreak", "treatment",
     # Environnement
-    "climate", "environment", "global warming",
+    "climate", "environment", "global warming", "wildfire", "drought",
+    "renewable energy", "pollution",
     # Économie
-    "economy", "inflation", "finance",
+    "economy", "inflation", "finance", "stock market", "unemployment",
+    "interest rate", "recession",
     # Géopolitique
-    "ukraine", "war", "conflict", "migration",
+    "ukraine", "war", "conflict", "migration", "nato", "sanctions",
+    "ceasefire", "diplomacy",
 ]
+
+# Domaines reconnus comme sources de desinformation (Media Bias/Fact Check,
+# NewsGuard, EU vs Disinfo) : recherches par nom de domaine pour alimenter
+# le label "unreliable".
+UNRELIABLE_KEYWORDS = [
+    "infowars.com", "naturalnews.com", "beforeitsnews.com",
+    "worldnewsdailyreport.com", "yournewswire.com", "newspunch.com",
+    "davidicke.com", "100percentfedup.com", "humansarefree.com",
+    "rt.com", "sputniknews.com", "tass.com",
+    "thegatewaypundit.com", "breitbart.com", "zerohedge.com",
+    "theepochtimes.com", "oann.com", "veteranstoday.com",
+    "lifesitenews.com", "globalresearch.ca",
+]
+
+KEYWORDS = GENERAL_KEYWORDS + UNRELIABLE_KEYWORDS
 
 PAGES_PER_KEYWORD = 10
 LIMIT_PER_PAGE = 100
 
 
-def load_token():
-    with open("token.json", "r", encoding="utf-8") as f:
-        return json.load(f)["accessJwt"]
-
-
-def get_posts(keyword, limit=100, cursor=None):
-    token = load_token()
-    headers = {"Authorization": f"Bearer {token}"}
-    params = {"q": keyword, "limit": limit}
-    if cursor:
-        params["cursor"] = cursor
-
-    r = requests.get(API_URL, headers=headers, params=params, timeout=10)
-    if r.status_code != 200:
-        print(f"  Erreur API {r.status_code} pour '{keyword}'")
-        return None
-    return r.json()
-
-
 if __name__ == "__main__":
     mongo = MongoService()
-    grand_total = 0
 
     estimated = len(KEYWORDS) * PAGES_PER_KEYWORD * LIMIT_PER_PAGE
     print(f"Lancement : {len(KEYWORDS)} mots-cles x {PAGES_PER_KEYWORD} pages x {LIMIT_PER_PAGE} posts = ~{estimated} posts max")
-    print(f"(les doublons sont ignores automatiquement)\n")
+    print("(les doublons sont ignores automatiquement)\n")
 
-    for keyword in KEYWORDS:
-        print(f"[{keyword}]")
-        cursor = None
-        keyword_total = 0
-
-        for page in range(PAGES_PER_KEYWORD):
-            data = get_posts(keyword, LIMIT_PER_PAGE, cursor)
-
-            if not data or "posts" not in data or not data["posts"]:
-                print(f"  Fin a la page {page + 1}")
-                break
-
-            inserted = mongo.insert_timeline(data["posts"])
-            nb = len(data["posts"])
-            keyword_total += nb
-            grand_total += nb
-            print(f"  Page {page + 1} : {nb} recus, {inserted} nouveaux inseres")
-
-            cursor = data.get("cursor")
-            if not cursor:
-                break
-
-            time.sleep(0.5)
-
-        print(f"  Sous-total '{keyword}' : {keyword_total} posts\n")
-
-    print(f"Termine ! Total recu : ~{grand_total} posts (sans compter les doublons ignores)")
+    total = bootstrap_from_keywords(mongo, KEYWORDS, PAGES_PER_KEYWORD, LIMIT_PER_PAGE)
+    print(f"Termine ! Total recu : ~{total} posts (sans compter les doublons ignores)")

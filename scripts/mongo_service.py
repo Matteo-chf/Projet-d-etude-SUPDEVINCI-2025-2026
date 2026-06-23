@@ -12,6 +12,7 @@ class MongoService:
         self.db = self.client["Bluesky"]
 
     def insert_timeline(self, items):
+        # Upsert sur "uri" : ignore silencieusement les doublons deja en base
         if not items:
             return 0
 
@@ -25,7 +26,7 @@ class MongoService:
             item.setdefault("inserted_at", now)
             ops.append(UpdateOne(
                 {"uri": uri},
-                {"$setOnInsert": item},
+                {"$setOnInsert": item},  # n'ecrit que si le doc n'existe pas encore
                 upsert=True
             ))
 
@@ -33,5 +34,5 @@ class MongoService:
             return 0
 
         result = self.db.timeline.bulk_write(ops)
-        return result.upserted_count
+        return result.upserted_count  # nombre de NOUVEAUX documents inseres
 

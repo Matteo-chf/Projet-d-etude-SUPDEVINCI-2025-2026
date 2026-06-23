@@ -15,15 +15,19 @@ tfidf_vectorizer:
   filepath: data/06_models/tfidf_vectorizer.pickle
   versioned: true
 
-kmeans_results:
+source_labels:
   type: pandas.ParquetDataset
-  filepath: data/07_model_output/kmeans_results.parquet
+  filepath: data/03_primary/source_labels.parquet
 
-kmeans_model:
+posts_with_emotion:
+  type: pandas.ParquetDataset
+  filepath: data/04_feature/posts_with_emotion.parquet
+
+classifier_model:
   type: pickle.PickleDataset
-  filepath: data/06_models/kmeans_model.pickle
+  filepath: data/06_models/classifier_model.pickle
   versioned: true
 
-scored_posts:
+classification_results:
   type: pandas.ParquetDataset
-  filepath: data/07_model_output/scored_posts.parquet
+  filepath: data/07_model_output/classification_results.parquet
