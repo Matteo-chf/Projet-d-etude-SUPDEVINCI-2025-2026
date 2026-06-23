@@ -36,24 +36,22 @@ st.markdown("""
 
 /* ═══ BASE PAPIER ═══ */
 html, body {
-    overflow: hidden !important;
-    height: 100vh !important;
+    overflow-y: auto !important;
+    min-height: 100vh !important;
     background: #f8f4ea !important;
 }
 [data-testid="stAppViewContainer"] {
     background: #f8f4ea !important;
-    overflow: hidden !important;
-    height: 100vh !important;
+    overflow-y: auto !important;
+    min-height: 100vh !important;
 }
 [data-testid="stMain"] {
     background: #f8f4ea !important;
-    overflow: hidden !important;
+    overflow-y: auto !important;
 }
 [data-testid="block-container"] {
     padding-top: 0.1rem !important;
     padding-bottom: 0.4rem !important;
-    overflow: hidden !important;
-    max-height: 100vh !important;
     font-family: 'Libre Baskerville', Georgia, serif !important;
 }
 
