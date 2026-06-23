@@ -40,19 +40,31 @@ def get_full_timeline(limit_per_call=100, max_pages=5):
     return all_items
 
 
-def search_posts(keyword, limit=100, cursor=None):
-    """Recherche une page de posts contenant un mot-cle. None si l'appel echoue."""
+def search_posts(keyword, limit=100, cursor=None, retries=3):
+    """Recherche une page de posts contenant un mot-cle, avec retry sur timeout/erreur reseau."""
     token = load_token()
     headers = {"Authorization": f"Bearer {token}"}
     params = {"q": keyword, "limit": limit}
     if cursor:
         params["cursor"] = cursor
 
-    r = requests.get(SEARCH_API_URL, headers=headers, params=params, timeout=10)
-    if r.status_code != 200:
-        print(f"  Erreur API {r.status_code} pour '{keyword}'")
-        return None
-    return r.json()
+    for attempt in range(retries):
+        try:
+            r = requests.get(SEARCH_API_URL, headers=headers, params=params, timeout=30)
+            if r.status_code != 200:
+                print(f"  Erreur API {r.status_code} pour '{keyword}'")
+                return None
+            return r.json()
+        except requests.exceptions.Timeout:
+            wait = (attempt + 1) * 5
+            print(f"  Timeout (tentative {attempt + 1}/{retries}), attente {wait}s...")
+            time.sleep(wait)
+        except requests.exceptions.ConnectionError:
+            print(f"  Erreur reseau pour '{keyword}', tentative {attempt + 1}/{retries}")
+            time.sleep(10)
+
+    print(f"  Abandon apres {retries} tentatives pour '{keyword}'")
+    return None
 
 
 def bootstrap_from_keywords(mongo, keywords, pages_per_keyword=10, limit_per_page=100):

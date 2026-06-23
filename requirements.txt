@@ -1,9 +1,26 @@
-requests
-pymongo
-dotenv
-pandas
-matplotlib
-seaborn
-scikit-learn
-kedro
-kedro-datasets[pandas,pickle,matplotlib]
+# === Collecte de données Bluesky ===
+requests                   # appels HTTP à l'API Bluesky
+
+# === Base de données ===
+pymongo                    # connexion et opérations MongoDB
+
+# === Configuration ===
+python-dotenv              # lecture du fichier .env
+
+# === RAG — Embeddings & similarité ===
+sentence-transformers      # modèle MiniLM pour vectoriser les textes
+scikit-learn               # cosine_similarity + normalize
+numpy                      # manipulation des matrices d'embeddings
+
+# === RAG — LLM scoring ===
+mistralai                  # appel à l'API Mistral pour générer le score de crédibilité
+
+# === Classification (TF-IDF + émotion) ===
+vaderSentiment              # score d'intensité émotionnelle (scripts/test_*.py)
+
+# === RAG Web ===
+ddgs                       # recherche web gratuite sans clé API (successeur de duckduckgo-search)
+
+# === Frontend ===
+streamlit                  # interface web du fact-checker (frontend/app.py)
+spacy                      # extraction de mots-cles (modele fr_core_news_sm a installer separement)
