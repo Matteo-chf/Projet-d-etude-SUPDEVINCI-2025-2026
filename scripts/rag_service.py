@@ -84,9 +84,18 @@ class RAGCredibilityService:
             for i in top_idx
         ]
 
-    def score(self, text: str, top_k: int = 5, use_web: bool = True) -> dict:
+    def score(
+        self,
+        text: str,
+        top_k: int = 5,
+        use_web: bool = True,
+        classification: dict | None = None,
+    ) -> dict:
         """
         Évalue la crédibilité via RAG MongoDB + RAG Web + Mistral.
+        `classification` (optionnel) est le résultat de l'analyse sémantique
+        locale (classify_local côté frontend) : transmis à Mistral comme
+        indice complémentaire sur le style d'écriture du texte.
         Retourne : credibility_score, credibility_label, alignment,
                    justification, sources_used (MongoDB), web_articles.
         """
@@ -133,30 +142,41 @@ class RAGCredibilityService:
 {web_context if web_context else "Aucun article web trouvé pour cette requête."}
 """ if use_web else ""
 
-        prompt = f"""Tu es un expert en fact-checking. Tu disposes de deux sources d'information :
-1. Des articles web (presse) récents trouvés sur des sources fiables — PRIORITAIRES dans ton analyse
-2. Une base de posts Bluesky issus de médias vérifiés (Reuters, BBC, AFP, Le Monde…) — source complémentaire
+        # Signal complémentaire : analyse sémantique locale (style d'écriture)
+        semantic_section = ""
+        if classification:
+            sem_pct   = round(classification["score"] * 100)
+            sem_label = "fiable" if classification["label"] == "reliable" else "suspect"
+            semantic_section = f"""
+=== ANALYSE SÉMANTIQUE LOCALE (style d'écriture, indice complémentaire) ===
+Un modèle local (TF-IDF + analyse émotionnelle) évalue à {sem_pct}% la probabilité que le
+style d'écriture du texte (vocabulaire, ton) corresponde à celui de sources fiables → jugé {sem_label}.
+"""
 
-Analyse si l'information suivante est confirmée, contredite ou non couverte.
+        prompt = f"""Tu es un expert en fact-checking. Évalue si l'information est confirmée, contredite ou non couverte, à partir de trois sources par ordre de priorité :
+1. Articles web (presse) récents et fiables — PRIORITAIRES
+2. Posts Bluesky de médias vérifiés (Reuters, BBC, AFP, Le Monde…) — complémentaires
+3. Analyse stylométrique locale (style d'écriture) — secondaire, ne prouve aucun fait
 
 === INFORMATION À ANALYSER ===
 {text}
 
 === SOURCES BASE LOCALE (posts Bluesky fiables) ===
 {mongo_context}
-{web_section}
+{web_section}{semantic_section}
 === CONTEXTE ===
 {coverage_note}
 
 === RÈGLES DE SCORING ===
-- Si l'information est CONFIRMÉE par les sources → score entre 70 et 100.
-- Si l'information est CONTREDITE par les sources → score entre 0 et 39.
-- Si le sujet est PEU COUVERT ou l'information AMBIGUË → score entre 40 et 69.
-- Pondération : les articles web (presse) comptent plus que les posts Bluesky dans la décision finale.
-  Les articles web les plus récents (listés en premier) doivent peser davantage que les plus anciens.
-- En cas de désaccord entre les deux sources, privilégie ce qui est confirmé ou contredit par les
-  articles web ; les posts Bluesky restent un indice complémentaire à prendre en compte, jamais à ignorer.
-- S'il n'y a aucun article web mais que les posts Bluesky couvrent bien le sujet, base-toi sur eux.
+- Confirmée par les sources → score 70-100. Contredite → 0-39. Peu couverte ou ambiguë → 40-69.
+- Pondération : les articles web comptent plus que les posts Bluesky ; parmi les articles web, les plus
+  récents (listés en premier) pèsent davantage que les plus anciens.
+- En cas de désaccord, privilégie les articles web ; les posts Bluesky restent un indice complémentaire à
+  toujours prendre en compte, jamais à ignorer. Sans article web, base-toi sur les posts Bluesky s'ils
+  couvrent bien le sujet.
+- L'analyse stylométrique est un indice secondaire : elle ne doit jamais contredire une confirmation ou
+  contradiction factuelle des articles web/Bluesky. Utilise-la pour départager les cas peu couverts ou
+  ambigus (style jugé suspect → bas de la fourchette 40-69, style jugé fiable → haut).
 
 Réponds UNIQUEMENT en JSON valide avec exactement ces champs :
 {{

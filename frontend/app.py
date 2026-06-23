@@ -203,6 +203,12 @@ html, body {
     border-right: 1px solid #d4c9a8;
     border-bottom: 1px solid #d4c9a8;
 }
+.classif-explain {
+    font-size: 0.7em;
+    color: #5a4a2e;
+    line-height: 1.45;
+    margin-bottom: 6px;
+}
 .classif-score {
     font-family: 'Playfair Display', Georgia, serif;
     font-size: 0.95em;
@@ -737,9 +743,12 @@ def classify_local(text: str) -> dict | None:
     proba = classifier.predict_proba([features])[0]
     score = float(proba[1])  # proba de la classe "reliable"
 
+    # Seuil relevé à 75% : en dessous, le style du texte est jugé suspect
+    # plutôt que franchement non fiable (le modèle n'est pas assez tranché
+    # pour trancher catégoriquement à 50%).
     return {
         "score": score,
-        "label": "reliable" if score >= 0.5 else "unreliable",
+        "label": "reliable" if score >= 0.75 else "suspect",
         "confidence": float(max(proba)),
     }
 
@@ -852,14 +861,19 @@ if st.session_state.current:
             classif_pct   = round(classif["score"] * 100)
             classif_icon  = LABEL_ICON.get(classif["label"], "⚠️")
             st.markdown("""
-            <div class="col-header">🧮&nbsp; Analyse Classification</div>
+            <div class="col-header">🧮&nbsp; Analyse de fiabilité par sémantique</div>
             """, unsafe_allow_html=True)
             st.markdown(f"""
             <div class="classif-box" style="border-left-color:{classif_color};">
+              <div class="classif-explain">
+                Analyse le vocabulaire et la tonalité émotionnelle du texte, comparés à des
+                milliers d'exemples fiables et non fiables. Seuil à 70&nbsp;% : au-dessus,
+                style jugé fiable&nbsp;; en dessous, style suspect.
+              </div>
               <div class="classif-score" style="color:{classif_color};">
                 {classif_icon} {LABEL_FR.get(classif["label"], classif["label"])} — {classif_pct}%
               </div>
-              <div class="classif-sub">Modèle local : TF-IDF + émotion (VADER) + régression logistique</div>
+              <div class="classif-sub">Modèle local : TF-IDF (vocabulaire) + VADER (émotion) + régression logistique</div>
             </div>
             """, unsafe_allow_html=True)
 
@@ -936,9 +950,9 @@ if submitted and news_input.strip():
 
     with st.spinner("Analyse en cours…"):
         try:
-            service       = get_service()
-            result        = service.score(news_input.strip())
+            service        = get_service()
             classification = classify_local(news_input.strip())
+            result         = service.score(news_input.strip(), classification=classification)
             st.session_state.current = {
                 "news": news_input.strip(),
                 "result": result,
