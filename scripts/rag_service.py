@@ -144,19 +144,34 @@ class RAGCredibilityService:
 
         # Signal complémentaire : analyse sémantique locale (style d'écriture)
         semantic_section = ""
+        semantic_impact = ""
         if classification:
             sem_pct   = round(classification["score"] * 100)
+            sem_conf  = round(classification.get("confidence", 0) * 100)
             sem_label = "fiable" if classification["label"] == "reliable" else "suspect"
             semantic_section = f"""
-=== ANALYSE SÉMANTIQUE LOCALE (style d'écriture, indice complémentaire) ===
-Un modèle local (TF-IDF + analyse émotionnelle) évalue à {sem_pct}% la probabilité que le
-style d'écriture du texte (vocabulaire, ton) corresponde à celui de sources fiables → jugé {sem_label}.
-"""
+=== ANALYSE SÉMANTIQUE LOCALE (TF-IDF + émotions, indice important) ===
+Un modèle local (TF-IDF + analyse émotionnelle VADER) évalue à {sem_pct}% la probabilité que le
+style d'écriture du texte (vocabulaire, ton, charge émotionnelle) corresponde à celui de sources fiables.
+Confiance du modèle : {sem_conf}%. Verdict stylométrique : {sem_label.upper()}.
 
-        prompt = f"""Tu es un expert en fact-checking. Évalue si l'information est confirmée, contredite ou non couverte, à partir de trois sources par ordre de priorité :
+⚠️ ATTENTION : Une analyse sémantique suspe (style d'écriture problématique) doit peser significativement
+sur le score final, surtout en cas de couverture faible dans les sources factuelles. Elle signale un risque
+réel (style manipulateur, polarisé, sensationnaliste).
+"""
+            semantic_impact = (
+                "\n- Si l'analyse sémantique juge le texte SUSPECT (score < 75%), "
+                "cela doit baisser significativement le score (jusqu'à -20 points), "
+                "même si les sources factuelles sont ambiguës."
+                "\n- Si l'analyse sémantique juge le texte FIABLE (score >= 75%), "
+                "cela peut augmenter modérément le score en cas d'ambiguïté factuelle."
+            )
+
+        prompt = f"""Tu es un expert en fact-checking. Évalue si l'information est confirmée, contredite ou non couverte, à partir de quatre sources par ordre de priorité :
 1. Articles web (presse) récents et fiables — PRIORITAIRES
 2. Posts Bluesky de médias vérifiés (Reuters, BBC, AFP, Le Monde…) — complémentaires
-3. Analyse stylométrique locale (style d'écriture) — secondaire, ne prouve aucun fait
+3. Analyse sémantique locale (style d'écriture, vocabulaire, charge émotionnelle) — IMPORTANTE
+4. Similarité avec sources fiables existantes — contexte général
 
 === INFORMATION À ANALYSER ===
 {text}
@@ -169,14 +184,13 @@ style d'écriture du texte (vocabulaire, ton) corresponde à celui de sources fi
 
 === RÈGLES DE SCORING ===
 - Confirmée par les sources → score 70-100. Contredite → 0-39. Peu couverte ou ambiguë → 40-69.
-- Pondération : les articles web comptent plus que les posts Bluesky ; parmi les articles web, les plus
-  récents (listés en premier) pèsent davantage que les plus anciens.
-- En cas de désaccord, privilégie les articles web ; les posts Bluesky restent un indice complémentaire à
-  toujours prendre en compte, jamais à ignorer. Sans article web, base-toi sur les posts Bluesky s'ils
-  couvrent bien le sujet.
-- L'analyse stylométrique est un indice secondaire : elle ne doit jamais contredire une confirmation ou
-  contradiction factuelle des articles web/Bluesky. Utilise-la pour départager les cas peu couverts ou
-  ambigus (style jugé suspect → bas de la fourchette 40-69, style jugé fiable → haut).
+- Pondération : articles web > posts Bluesky > analyse sémantique > similarité générale.
+  Les articles web les plus récents pèsent davantage que les plus anciens.
+- En cas de désaccord, privilégie les articles web. Les posts Bluesky et l'analyse sémantique
+  restent des indices complémentaires importants à toujours prendre en compte.{semantic_impact}
+- L'analyse sémantique est un indice IMPORTANT : elle signale des risques de manipulation
+  (ton sensationnaliste, polarisé, vocabulaire émotionnel excessif). Un texte au style
+  suspect doit réduire le score, surtout si les sources factuelles sont peu couverte ou ambigues.
 
 Réponds UNIQUEMENT en JSON valide avec exactement ces champs :
 {{
