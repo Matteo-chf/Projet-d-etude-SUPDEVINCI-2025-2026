@@ -8,4 +8,6 @@ __pycache__/
 pyvenv.cfg
 pipeline-kedro/data/
 .claude/
+.structure/
+
 
