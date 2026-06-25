@@ -1,6 +1,7 @@
 import os
 import sys
 import re
+import json
 import glob
 import pickle
 import html as html_lib
@@ -8,6 +9,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 import spacy
 import streamlit as st
+import streamlit.components.v1 as components
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
 ROOT_DIR    = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -235,9 +237,32 @@ html, body {
     margin-bottom: 8px;
 }
 
+/* ═══ COLONNES DE MÊME HAUTEUR : la zone scrollable la plus courte s'étire
+   pour s'aligner sur l'autre colonne, peu importe le contenu de chaque côté ═══ */
+[data-testid="stHorizontalBlock"] { align-items: stretch; }
+[data-testid="column"] {
+    display: flex;
+    flex-direction: column;
+}
+[data-testid="column"] > div,
+[data-testid="column"] [data-testid="stVerticalBlock"] {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+}
+[data-testid="column"] [data-testid="element-container"]:has(.cards-scroll) {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
 /* ═══ ZONE SCROLLABLE CARTES ═══ */
 .cards-scroll {
-    max-height: 300px;
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: 380px;
     overflow-y: auto;
     overflow-x: hidden;
     padding-right: 4px;
@@ -318,6 +343,35 @@ html, body {
 }
 .wiki-noun-link:hover { background: #ece9f7; }
 
+/* ═══ MENU DEROULANT (texte trop long) ═══ */
+.wiki-details { margin-bottom: 10px; }
+.wiki-details summary.wiki-summary {
+    cursor: pointer;
+    font-family: 'Libre Baskerville', Georgia, serif;
+    font-size: 0.78em;
+    line-height: 1.6;
+    color: #1a1208;
+    font-style: italic;
+    border: 1px solid #c9c2d8;
+    border-left: 3px solid #5a5a8a;
+    background: #fbfaff;
+    padding: 9px 12px;
+    list-style: none;
+}
+.wiki-details summary.wiki-summary::-webkit-details-marker { display: none; }
+.wiki-details summary.wiki-summary::after {
+    content: "▸ déplier";
+    float: right;
+    font-size: 0.82em;
+    font-style: normal;
+    color: #5a5a8a;
+    white-space: nowrap;
+    margin-left: 8px;
+}
+.wiki-details[open] summary.wiki-summary::after { content: "▾ réduire"; }
+.wiki-details[open] summary.wiki-summary { margin-bottom: 8px; }
+.wiki-details .wiki-question { margin-bottom: 0; }
+
 /* ═══ ARTICLE CARD (style coupure de presse) ═══ */
 .article-card {
     border: 1px solid #c9b87a;
@@ -330,6 +384,11 @@ html, body {
     transition: background 0.15s;
 }
 .article-card:hover { background: #fdf8e8; }
+.article-card-contra {
+    border-color: #e0a3a3;
+    background: #fbeaea;
+}
+.article-card-contra:hover { background: #f6dada; }
 .article-source {
     display: flex;
     align-items: center;
@@ -575,9 +634,10 @@ def tweets_html(sources: list[dict]) -> str:
     return "".join(cards)
 
 
-def articles_html(articles: list[dict]) -> str:
+def articles_html(articles: list[dict], contradicted: bool = False) -> str:
     if not articles:
         return '<p style="font-style:italic;color:#8a7355;font-size:0.82em;">Aucun article trouvé.</p>'
+    card_class = "article-card article-card-contra" if contradicted else "article-card"
     cards = []
     for a in articles:
         title   = esc(a.get("title", "Sans titre"))
@@ -589,7 +649,7 @@ def articles_html(articles: list[dict]) -> str:
         favicon = f"https://www.google.com/s2/favicons?domain={domain}&amp;sz=32"
         date_html = f'<span class="article-date">{date}</span>' if date else ""
         cards.append(
-            f'<a href="{url}" target="_blank" class="article-card">'
+            f'<a href="{url}" target="_blank" class="{card_class}">'
             f'<div class="article-source">'
             f'<img src="{favicon}" width="12" height="12" '
             f'onerror="this.style.display=\'none\'" style="vertical-align:middle;"/>'
@@ -666,6 +726,24 @@ def linkify_nouns(text: str) -> str:
     return "".join(parts)
 
 
+WIKI_PREVIEW_LEN = 200  # au-delà, le texte est replié dans un menu déroulant
+
+
+def wiki_question_html(news_text: str) -> str:
+    """Bloc Wikipédia : affiché tel quel si court, repliable (<details>) si trop long."""
+    linked_full = linkify_nouns(news_text)
+    if len(news_text) <= WIKI_PREVIEW_LEN:
+        return f'<div class="wiki-question">{linked_full}</div>'
+
+    preview = esc(news_text[:WIKI_PREVIEW_LEN].rstrip()) + "…"
+    return f"""
+    <details class="wiki-details">
+      <summary class="wiki-summary">{preview}</summary>
+      <div class="wiki-question">{linked_full}</div>
+    </details>
+    """
+
+
 def stat_row_html(similar: int, contra: int) -> str:
     s = "s" if similar > 1 else ""
     c = "ent" if contra > 1 else ""
@@ -687,6 +765,47 @@ def gauge_html(score: int, label: str) -> str:
       <span>0 — Non fiable</span><span>40 — Suspect</span>
       <span>70 — Fiable</span><span>100</span>
     </div>"""
+
+
+# ── Loader animé pendant l'analyse (spinner bleu + messages qui défilent) ───
+# Tourne en JS pur dans un iframe : continue d'animer pendant que Python est
+# bloqué sur l'appel RAG/Mistral, sans dépendre d'un nouveau rerun Streamlit.
+LOADING_MESSAGES = [
+    "Lecture des articles…",
+    "Surf sur le web…",
+    "Analyse du style d'écriture…",
+    "Interrogation de l'IA…",
+    "Comparaison avec les sources fiables…",
+    "Vérification des faits…",
+]
+
+
+def loading_spinner_html() -> str:
+    messages_json = json.dumps(LOADING_MESSAGES, ensure_ascii=False)
+    return f"""
+    <div style="display:flex;align-items:center;gap:10px;
+                font-family:'Libre Baskerville',Georgia,serif;padding:6px 2px;">
+      <div style="width:16px;height:16px;border:3px solid #fbe3c0;
+                  border-top-color:#e8841a;border-radius:50%;
+                  animation:spin 0.8s linear infinite;flex-shrink:0;"></div>
+      <span id="loading-msg" style="color:#1a1208;font-size:0.95em;
+            font-style:italic;transition:opacity 0.25s;">{LOADING_MESSAGES[0]}</span>
+    </div>
+    <style>@keyframes spin {{ to {{ transform: rotate(360deg); }} }}</style>
+    <script>
+      const messages = {messages_json};
+      let i = 0;
+      const el = document.getElementById('loading-msg');
+      setInterval(() => {{
+        i = (i + 1) % messages.length;
+        el.style.opacity = 0;
+        setTimeout(() => {{
+          el.textContent = messages[i];
+          el.style.opacity = 1;
+        }}, 250);
+      }}, 1700);
+    </script>
+    """
 
 
 # ── RAG service (chargé une seule fois) ──────────────────────────────────────
@@ -889,10 +1008,7 @@ if st.session_state.current:
         st.markdown("""
         <div class="col-header">📖&nbsp; Wikipédia</div>
         """, unsafe_allow_html=True)
-        st.markdown(
-            f'<div class="wiki-question">{linkify_nouns(news_preview)}</div>',
-            unsafe_allow_html=True,
-        )
+        st.markdown(wiki_question_html(news_preview), unsafe_allow_html=True)
 
         st.markdown("""
         <div class="col-header">📰&nbsp; Articles de presse</div>
@@ -909,7 +1025,7 @@ if st.session_state.current:
             """, unsafe_allow_html=True)
         else:
             st.markdown(f"""
-            <div class="cards-scroll">{articles_html(web_articles)}</div>
+            <div class="cards-scroll">{articles_html(web_articles, contradicted=alignment == "contradicted")}</div>
             {stat_row_html(similar_articles, contra_articles)}
             """, unsafe_allow_html=True)
 
@@ -933,6 +1049,8 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+loading_placeholder = st.empty()
+
 with st.form("news_form", clear_on_submit=True):
     news_input = st.text_area(
         "news_input",
@@ -948,20 +1066,22 @@ if submitted and news_input.strip():
     if st.session_state.current:
         st.session_state.history.append(st.session_state.current)
 
-    with st.spinner("Analyse en cours…"):
-        try:
-            service        = get_service()
-            classification = classify_local(news_input.strip())
-            result         = service.score(news_input.strip(), classification=classification)
-            st.session_state.current = {
-                "news": news_input.strip(),
-                "result": result,
-                "classification": classification,
-            }
-        except FileNotFoundError as e:
-            st.error(f"Index RAG introuvable. Lancez d'abord :\n```\npython scripts/10_build_rag_index.py\n```")
-        except Exception as e:
-            st.error(f"Erreur : {e}")
+    with loading_placeholder.container():
+        components.html(loading_spinner_html(), height=40)
+    try:
+        service        = get_service()
+        classification = classify_local(news_input.strip())
+        result         = service.score(news_input.strip(), classification=classification)
+        st.session_state.current = {
+            "news": news_input.strip(),
+            "result": result,
+            "classification": classification,
+        }
+    except FileNotFoundError as e:
+        st.error(f"Index RAG introuvable. Lancez d'abord :\n```\npython scripts/10_build_rag_index.py\n```")
+    except Exception as e:
+        st.error(f"Erreur : {e}")
+    loading_placeholder.empty()
     st.rerun()
 
 elif submitted:
