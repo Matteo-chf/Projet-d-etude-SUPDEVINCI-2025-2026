@@ -222,6 +222,28 @@ html, body {
     font-style: italic;
     margin-top: 2px;
 }
+.metrics-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'Libre Baskerville', Georgia, serif;
+    font-size: 0.72em;
+    color: #1a1208;
+}
+.metrics-table th, .metrics-table td {
+    padding: 1px 4px !important;
+    line-height: 1.3 !important;
+    text-align: right;
+    border: none !important;
+}
+.metrics-table th:first-child, .metrics-table td:first-child { text-align: left; }
+.metrics-table th {
+    color: #8a7355;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.92em;
+    border-bottom: 1px solid #d4c9a8 !important;
+}
+.metrics-table tr:last-child td { font-weight: 700; border-top: 1px solid #d4c9a8 !important; }
 
 /* ═══ SECTION HEADER (style colonne de journal) ═══ */
 .col-header {
@@ -260,12 +282,18 @@ html, body {
 
 /* ═══ ZONE SCROLLABLE CARTES ═══ */
 .cards-scroll {
-    flex: 1 1 auto;
-    min-height: 0;
-    max-height: 380px;
+    flex: 0 0 340px;
+    height: 340px;
     overflow-y: auto;
     overflow-x: hidden;
     padding-right: 4px;
+}
+/* Section "Articles de presse" : agrandie pour compenser le bloc Wikipédia
+   au-dessus, plus court que le bloc d'analyse sémantique de la colonne Bluesky,
+   afin que les deux colonnes finissent à peu près à la même hauteur. */
+.cards-scroll.articles-scroll {
+    flex: 0 0 460px;
+    height: 460px;
 }
 .cards-scroll::-webkit-scrollbar { width: 4px; }
 .cards-scroll::-webkit-scrollbar-track { background: #f0ebe0; }
@@ -777,6 +805,8 @@ LOADING_MESSAGES = [
     "Interrogation de l'IA…",
     "Comparaison avec les sources fiables…",
     "Vérification des faits…",
+    "Remise en question…",
+    "Sceptique…",
 ]
 
 
@@ -986,13 +1016,24 @@ if st.session_state.current:
             <div class="classif-box" style="border-left-color:{classif_color};">
               <div class="classif-explain">
                 Analyse le vocabulaire et la tonalité émotionnelle du texte, comparés à des
-                milliers d'exemples fiables et non fiables. Seuil à 70&nbsp;% : au-dessus,
+                milliers d'exemples fiables et non fiables. Seuil à 75&nbsp;% : au-dessus,
                 style jugé fiable&nbsp;; en dessous, style suspect.
               </div>
               <div class="classif-score" style="color:{classif_color};">
                 {classif_icon} {LABEL_FR.get(classif["label"], classif["label"])} — {classif_pct}%
               </div>
               <div class="classif-sub">Modèle local : TF-IDF (vocabulaire) + VADER (émotion) + régression logistique</div>
+            </div>
+            """, unsafe_allow_html=True)
+            st.markdown("""
+            <div class="classif-box" style="border-left-color:#8a7355;">
+              <div class="classif-explain">Performance du modèle (jeu d'entraînement) :</div>
+              <table class="metrics-table">
+                <tr><th></th><th>Précision</th><th>Rappel</th><th>F1</th><th>Support</th></tr>
+                <tr><td>reliable</td><td>1.00</td><td>1.00</td><td>1.00</td><td>14&nbsp;801</td></tr>
+                <tr><td>unreliable</td><td>0.97</td><td>0.97</td><td>0.97</td><td>2&nbsp;050</td></tr>
+                <tr><td>Exactitude</td><td></td><td></td><td>0.99</td><td>16&nbsp;851</td></tr>
+              </table>
             </div>
             """, unsafe_allow_html=True)
 
@@ -1025,7 +1066,7 @@ if st.session_state.current:
             """, unsafe_allow_html=True)
         else:
             st.markdown(f"""
-            <div class="cards-scroll">{articles_html(web_articles, contradicted=alignment == "contradicted")}</div>
+            <div class="cards-scroll articles-scroll">{articles_html(web_articles, contradicted=alignment == "contradicted")}</div>
             {stat_row_html(similar_articles, contra_articles)}
             """, unsafe_allow_html=True)
 

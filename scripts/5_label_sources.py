@@ -61,6 +61,10 @@ TRUSTED_DOMAINS = {
     "nrc.nl", "nu.nl", "svt.se", "nrk.no", "yle.fi",
     "publico.pt", "observador.pt",
 
+    # Presse sportive — France / USA
+    "lequipe.fr", "rmcsport.bfmtv.com",
+    "espn.com", "si.com",
+
     # Fact-checkers reconnus
     "factcheck.org", "snopes.com", "politifact.com",
     "lesdecodeurs.fr", "checknews.fr", "verafiles.org",

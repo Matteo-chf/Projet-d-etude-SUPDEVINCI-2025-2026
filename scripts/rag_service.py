@@ -116,7 +116,7 @@ class RAGCredibilityService:
         web_error    = None
         if use_web:
             print("  Recherche web en cours…")
-            web_articles, web_error = search_web(text, max_results=7)
+            web_articles, web_error = search_web(text, max_results=10)
             if web_articles:
                 web_blocks = []
                 for i, a in enumerate(web_articles, 1):

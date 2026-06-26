@@ -32,6 +32,8 @@ TRUSTED_DOMAINS = {
     # Institutions
     "who.int", "un.org", "europa.eu", "gouvernement.fr",
     "elysee.fr", "assemblee-nationale.fr", "nasa.gov", "nih.gov",
+    # Presse sportive France / USA
+    "lequipe.fr", "rmcsport.bfmtv.com", "espn.com", "si.com",
     # Fact-checkers
     "factcheck.org", "snopes.com", "lesdecodeurs.fr", "checknews.fr",
 }
