@@ -1,2 +1,5 @@
+.env
+venv/
+pyvenv.cfg
 scripts/token.json
 logs/
